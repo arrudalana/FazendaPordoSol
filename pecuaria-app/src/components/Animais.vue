@@ -9,6 +9,7 @@
       {{ mensagemFeedback }}
     </div>
 
+    // Modal de confirmação para exclusão de animal
     <div v-if="mostrarModal" class="modal-overlay">
       <div class="modal-content">
         <h2 class="modal-title">CONFIRMAR EXCLUSÃO</h2>
@@ -16,12 +17,14 @@
           Tem certeza que deseja excluir o animal? Esta ação não pode ser desfeita.
         </p>
         <div class="modal-actions">
-          <button class="btn-modal-cancelar" @click="fecharModal">Cancelar</button>
-          <button class="btn-modal-excluir" @click="confirmarExclusao">Excluir</button>
+          <button class="btn-modal-excluir" @click="confirmarExclusao">Sim</button>
+          <button class="btn-modal-cancelar" @click="fecharModal">Não</button>
+          
         </div>
       </div>
     </div>
 
+    // Tela de listagem dos animais, com barra de busca, tabela de animais, e botão para abrir o formulário de cadastro/edição
     <div v-if="telaAtual === 'lista'">
       <div class="page-header">
         <div class="title-section">
@@ -35,6 +38,7 @@
       </div>
 
       <div class="content-card">
+        // Barra de busca para filtrar os animais por brinco, raça ou dono
         <div class="search-bar">
           <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           <input type="text" v-model="termoBusca" placeholder="Buscar por brinco ou raça..." />
@@ -44,27 +48,32 @@
           <table class="animais-table">
             <thead>
               <tr>
+                <th>Proprietário</th>
                 <th>Brinco/Nome</th>
                 <th>Raça</th>
+                <th>Leilão</th>
                 <th>Peso</th>
                 <th>Status</th>
-                <th>Proprietário</th>
                 <th class="text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="animaisFiltrados.length === 0">
-                <td colspan="6" class="tabela-vazia">Nenhum animal encontrado.</td>
+                <td colspan="7" class="tabela-vazia">Nenhum animal encontrado.</td>
               </tr>
               
               <tr v-for="animal in animaisFiltrados" :key="animal.id">
+                <td>{{ animal.dono_nome }}</td>
                 <td><strong>{{ animal.nome }}</strong></td>
                 <td>{{ animal.raca }}</td>
+                <td>
+                  <span v-if="animal.leilao_nome !== 'Não vinculado'" class="badge-leilao">{{ animal.leilao_nome }}</span>
+                  <span v-else class="text-muted">Não vinculado</span>
+                </td>
                 <td>{{ animal.peso }} kg</td>
                 <td>
                   <span :class="['status-badge', classeStatus(animal.status)]">{{ animal.status === 'V' ? 'Vivo' : 'Morto' }}</span>
                 </td>
-                <td>{{ animal.dono_nome }}</td>
                 <td class="acoes text-right">
                   <button class="btn-acao edit" title="Editar" @click="editarAnimal(animal)">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -172,46 +181,35 @@ const editandoId = ref(null);
 const mostrarModal = ref(false);
 const animalParaExcluir = ref(null);
 
-// ESTADOS PARA ARMAZENAR OS DADOS DO BANCO
-const listaProprietarios = ref([]);// Novo estado para Proprietários
-const listaCategorias = ref([]); // Novo estado para Categorias
-const animais = ref([]);// Estado para armazenar os animais carregados do banco
+const listaProprietarios = ref([]);
+const listaCategorias = ref([]); 
+const animais = ref([]);
 
-// 1. BUSCA OS PROPRIETÁRIOS NO BANCO
 const carregarProprietarios = async () => {
   try {
-    const resposta = await fetch('http://127.0.0.1:8000/api/proprietarios/'); 
-    listaProprietarios.value = await resposta.json();// Armazena a lista de proprietários no estado
-  } catch (error) {
-    console.error("Erro ao carregar proprietários:", error); // Loga erros de conexão ou resposta da API
-  }
+    const resposta = await fetch('http://127.0.0.1:8000/api/proprietarios/');
+    listaProprietarios.value = await resposta.json();
+  } catch (error) { console.error(error); }
 };
 
-// 2. BUSCA AS CATEGORIAS NO BANCO
 const carregarCategorias = async () => {
   try {
-    const resposta = await fetch('http://127.0.0.1:8000/api/categorias/');// Faz a requisição para a API de categorias
-    listaCategorias.value = await resposta.json();// Armazena a resposta (lista de categorias) no estado "listaCategorias"
-  } catch (error) {
-    console.error("Erro ao carregar categorias:", error);// Loga erros de conexão ou resposta da API
-  }
+    const resposta = await fetch('http://127.0.0.1:8000/api/categorias/');
+    listaCategorias.value = await resposta.json();
+  } catch (error) { console.error(error); }
 };
 
-//Busca os animais no banco e armazena no estado "animais"
 const carregarAnimais = async () => {
   try {
-    const resposta = await fetch('http://127.0.0.1:8000/api/animais/'); // Faz a requisição para a API de animais
-    animais.value = await resposta.json(); // Armazena a resposta (lista de animais) no estado "animais"
-  } catch (error) {
-    console.error("Erro ao carregar animais:", error);
-  }
+    const resposta = await fetch('http://127.0.0.1:8000/api/animais/');
+    animais.value = await resposta.json();
+  } catch (error) { console.error(error); }
 };
 
-// Roda as três buscas assim que a tela abre
 onMounted(() => {
-  carregarProprietarios();//  Carrega os proprietários para o dropdown do formulário
-  carregarCategorias();// Carrega as categorias para o dropdown do formulário
-  carregarAnimais();// Carrega os animais para exibição na tabela
+  carregarProprietarios();
+  carregarCategorias();
+  carregarAnimais();
 });
 
 const dataAtual = new Date();
@@ -227,7 +225,8 @@ const animaisFiltrados = computed(() => {
   const termo = termoBusca.value.toLowerCase();
   return animais.value.filter(a => 
     (a.nome && a.nome.toLowerCase().includes(termo)) || 
-    (a.raca && a.raca.toLowerCase().includes(termo))
+    (a.raca && a.raca.toLowerCase().includes(termo)) ||
+    (a.dono_nome && a.dono_nome.toLowerCase().includes(termo)) // Adicionei a busca por dono também!
   );
 });
 
@@ -251,7 +250,7 @@ const abrirFormulario = () => {
   telaAtual.value = 'formulario';
 };
 
-const editarAnimal = (animal) => { // Preenche o formulário com os dados do animal selecionado para edição
+const editarAnimal = (animal) => {
   editandoId.value = animal.id;
   formAnimal.nome = animal.nome;
   formAnimal.raca = animal.raca;
@@ -268,7 +267,6 @@ const voltarParaLista = () => {
   resetarFormulario();
 };
 
-// Função para salvar um novo animal ou atualizar um existente, dependendo se "editandoId" tem valor ou não
 const salvarAnimal = async () => {
   const url = editandoId.value 
     ? `http://127.0.0.1:8000/api/animais/${editandoId.value}/` 
@@ -285,7 +283,7 @@ const salvarAnimal = async () => {
         peso: formAnimal.peso,
         status: formAnimal.status,
         sexo: formAnimal.sexo,
-        dt_nasc: '2024-05-19', // Data temporária
+        dt_nasc: '2024-05-19', 
         id_categoria: formAnimal.id_categoria,
         id_dono: formAnimal.id_dono
       })
@@ -296,7 +294,7 @@ const salvarAnimal = async () => {
       await carregarAnimais();
       voltarParaLista();
     } else {
-      mostrarMensagem('Erro ao salvar o animal. Verifique se todos os campos estão preenchidos.');
+      mostrarMensagem('Erro ao salvar o animal.');
     }
   } catch (error) {
     mostrarMensagem('Erro de conexão com o servidor.');
@@ -334,7 +332,6 @@ const confirmarExclusao = async () => {
 </script>
 
 <style scoped>
-/* Estilos mantidos intactos */
 .animais-page { padding: 20px 40px; background-color: #f9f2ec; min-height: 100vh; font-family: 'Segoe UI', Tahoma, sans-serif; }
 .top-bar { border-bottom: 1px solid #ebdcd1; padding-bottom: 10px; margin-bottom: 25px; }
 .current-date { color: #8a7b72; font-size: 14px; margin: 0; text-transform: lowercase; }
@@ -364,6 +361,10 @@ const confirmarExclusao = async () => {
 .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 .status-ativo { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
 .status-doente { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+.badge-leilao { background-color: #fffaf7; color: #ea580c; border: 1px solid #ffede3; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; }
+.text-muted { color: #94a3b8; font-style: italic; font-size: 13px; }
+
 .acoes { display: flex; gap: 10px; justify-content: flex-end; }
 .btn-acao { background: transparent; border: none; cursor: pointer; color: #ff7322; border-radius: 4px; padding: 4px; }
 .btn-acao svg { width: 18px; height: 18px; }

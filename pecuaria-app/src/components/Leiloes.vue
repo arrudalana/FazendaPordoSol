@@ -43,7 +43,7 @@
             <p><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> {{ leilao.local || 'Local não informado' }}</p>
           </div>
 
-          <div class="animais-vinculados">
+          <div class="animais-vinculados"> <!-- Lista de animais vinculados ao leilão -->
             <p class="label-animais">Animais Participantes:</p>
             <div class="tags-container" v-if="leilao.animais.length > 0">
               <span class="animal-tag" v-for="animal in leilao.animais" :key="animal.id">{{ animal.nome }}</span>
@@ -51,7 +51,7 @@
             <p v-else class="text-muted">Nenhum animal cadastrado</p>
           </div>
 
-          <div class="card-footer">
+          <div class="card-footer"> <!-- Botões de ação para editar ou excluir o leilão -->
             <button class="btn-editar-outline" @click="editarLeilao(leilao)">
               <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
               Editar
@@ -96,10 +96,14 @@
           <div class="input-group full-width" style="margin-top: 15px;">
             <label>Selecione os Animais Participantes</label>
             <div class="checkbox-grid">
-              <label class="checkbox-item" v-for="animal in listaAnimais" :key="animal.id">
+              <label class="checkbox-item" v-for="animal in animaisDisponiveis" :key="animal.id">
                 <input type="checkbox" :value="animal.id" v-model="form.animais_ids">
                 <span class="checkbox-text">{{ animal.nome }} ({{ animal.raca }})</span>
               </label>
+              
+              <div v-if="animaisDisponiveis.length === 0" style="color: #ea580c; font-size: 14px; font-style: italic; width: 100%;">
+                Nenhum animal livre no momento.
+              </div>
             </div>
           </div>
 
@@ -114,14 +118,32 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+// Adicionamos o 'computed' aqui
+import { ref, reactive, onMounted, computed } from 'vue';
 
 const telaAtual = ref('lista'); 
 const mensagemFeedback = ref(''); 
 const editandoId = ref(null);
 
 const listaLeiloes = ref([]);
-const listaAnimais = ref([]); // Para preencher os checkboxes
+const listaAnimais = ref([]); // Todos os animais do banco
+
+// Filtro de animais disponíveis
+const animaisDisponiveis = computed(() => {
+  const idsOcupados = new Set();
+  
+  // Todos os leilões cadastrados
+  listaLeiloes.value.forEach(leilao => {
+    // 2. Se NÃO for o leilão que estamos editando agora, 
+    // nós anotamos os IDs dos animais dele como "ocupados"
+    if (leilao.id_leilao !== editandoId.value) {
+      leilao.animais.forEach(animal => idsOcupados.add(animal.id));
+    }
+  });
+
+  // 3. Retornamos apenas os animais que NÃO estão na lista de ocupados
+  return listaAnimais.value.filter(animal => !idsOcupados.has(animal.id));
+});
 
 // Configuração de Data da Tela (Cabeçalho)
 const dataAtual = new Date();
@@ -131,6 +153,7 @@ const form = reactive({
   nome_evento: '', dt_leilao: '', local: '', custo_fixo: 0, animais_ids: []
 });
 
+// Função para carregar os leilões e animais do backend e armazenar nas variáveis
 const carregarDados = async () => {
   try {
     const resLeiloes = await fetch('http://127.0.0.1:8000/api/leiloes/');
@@ -162,7 +185,8 @@ const abrirFormulario = () => {
   telaAtual.value = 'formulario';
 };
 
-const editarLeilao = (leilao) => {
+// Preenche o formulário com os dados do leilão selecionado para edição
+const editarLeilao = (leilao) => { 
   form.nome_evento = leilao.nome_evento;
   form.dt_leilao = leilao.dt_leilao;
   form.local = leilao.local;
@@ -174,11 +198,13 @@ const editarLeilao = (leilao) => {
 
 const voltarParaLista = () => { telaAtual.value = 'lista'; };
 
-const salvarLeilao = async () => {
+// Determina se é criação ou edição com base na presença do editandoId e chama a API correspondente
+const salvarLeilao = async () => { 
   const url = editandoId.value ? `http://127.0.0.1:8000/api/leiloes/${editandoId.value}/` : 'http://127.0.0.1:8000/api/leiloes/';
   const metodo = editandoId.value ? 'PUT' : 'POST';
 
-  try {
+  // Chama a API para criar ou atualizar o leilão, passando os dados do formulário como JSON
+  try { 
     const resposta = await fetch(url, {
       method: metodo,
       headers: { 'Content-Type': 'application/json' },
@@ -193,11 +219,11 @@ const salvarLeilao = async () => {
   } catch (error) { console.error(error); }
 };
 
-const excluirLeilao = async (id) => {
-  if(confirm("Tem certeza que deseja excluir este leilão?")) {
-    await fetch(`http://127.0.0.1:8000/api/leiloes/${id}/`, { method: 'DELETE' });
-    mostrarMensagem('Leilão removido!');
-    await carregarDados();
+const excluirLeilao = async (id) => { // Confirmação antes de excluir
+  if(confirm("Tem certeza que deseja excluir este leilão?")) { // Simples confirmação usando o prompt nativo do navegador
+    await fetch(`http://127.0.0.1:8000/api/leiloes/${id}/`, { method: 'DELETE' }); // Chama a API para excluir o leilão
+    mostrarMensagem('Leilão removido!'); // Exibe mensagem de feedback para o usuário
+    await carregarDados(); // Recarrega a lista de leilões para refletir a exclusão
   }
 };
 </script>
@@ -271,5 +297,44 @@ const excluirLeilao = async (id) => {
 .checkbox-item input[type="checkbox"] { width: auto; accent-color: #ff7322; transform: scale(1.2); }
 .checkbox-text { font-size: 14px; color: #475569; }
 
-.feedback-banner { background-color: #eafbee; color: #0b9e15; border: 1px solid #b7f0c1; padding: 12px 20px; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.feedback-banner { 
+  /* Tira o banner do fluxo normal e faz ele flutuar */
+  position: fixed; 
+  top: 30px; 
+  right: 30px; 
+  z-index: 9999; /* Garante que fique por cima de tudo na tela */
+  
+  /* Ajusta o tamanho para ficar proporcional ao texto */
+  width: fit-content; 
+  max-width: 400px;
+  
+  /* Cores e bordas que você já tinha */
+  background-color: #eafbee; 
+  color: #0b9e15; 
+  border: 1px solid #b7f0c1; 
+  padding: 15px 25px; 
+  border-radius: 8px; 
+  
+  /* Alinhamento interno e sombra para dar profundidade */
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  font-weight: 600; 
+  font-size: 14px; 
+  box-shadow: 0 10px 25px rgba(11, 158, 21, 0.15);
+  
+  /* Adiciona uma animação suave ao aparecer */
+  animation: deslizarParaEsquerda 0.3s ease-out forwards;
+}
+
+.feedback-banner .icon { 
+  width: 22px; 
+  height: 22px; 
+}
+
+/* Animação para a notificação entrar na tela de forma suave */
+@keyframes deslizarParaEsquerda {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
 </style>

@@ -5,19 +5,20 @@ from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
 
 
-def fetch_as_dict(cursor): #-> Essa função é um helper para transformar os resultados do cursor do banco em uma lista de dicionários, onde cada dicionário representa uma linha da tabela, com as chaves sendo os nomes das colunas. Isso facilita muito a manipulação dos dados e o envio como JSON para o frontend.
+def fetch_as_dict(cursor): #-> Essa função é um helper para transformar os resultados do cursor do banco em uma lista de dicionários, onde cada dicionário representa uma linha da tabela, com as chaves sendo os nomes das colunas
     colunas = [col[0] for col in cursor.description]
     return [dict(zip(colunas, row)) for row in cursor.fetchall()]
 
 
 # ------------------------- LOGIN -------------------------
 @csrf_exempt 
+#O método realizar_login é responsável por autenticar os usuários (donos) que tentam acessar o sistema. Ele recebe uma requisição POST com o usuario e senha, verifica essas credenciais no banco de dados, e retorna uma resposta JSON indicando se o login foi bem-sucedido ou não, junto com os dados do usuário logado em caso de sucesso. Ele também lida com erros e casos de usuário não encontrado ou senha incorreta, retornando mensagens apropriadas para o frontend.
 def realizar_login(request): 
     if request.method == 'POST': 
         try:
-            dados = json.loads(request.body) # O corpo da requisição vem como JSON, então precisamos carregar ele usando json.loads para transformar em um dicionário Python
-            usuario_input = dados.get('email') # O frontend manda o campo de email, mas no banco o campo se chama usuario, então pegamos o valor do email e guardamos na variável usuario_input para usar na query SQL
-            senha_input = dados.get('senha') # O mesmo para a senha, o frontend manda senha, e guardamos na variável senha_input para usar na query SQL
+            dados = json.loads(request.body) 
+            usuario_input = dados.get('email')
+            senha_input = dados.get('senha')
 
             with connection.cursor() as cursor:
                 # Buscando o usuário específico no banco
@@ -49,10 +50,12 @@ def realizar_login(request):
 
 # ------------------------- PROPRIETÁRIOS (Dono) -------------------------
 @csrf_exempt
+#O método gerenciar_proprietarios é responsável por lidar com as requisições relacionadas aos donos (proprietários) dos animais. Ele suporta os métodos GET para listar os donos e POST para criar um novo dono. No GET, ele busca os donos no banco, conta quantos animais cada dono possui, e formata os dados para o frontend. No POST, ele insere um novo dono no banco e retorna o ID do dono criado.
 def gerenciar_proprietarios(request):
-    if request.method == 'GET':
+    # O método retorna a lista de donos, e o POST cria um novo dono.
+    if request.method == 'GET': 
         with connection.cursor() as cursor:
-            # DEBUG: Subquery (SELECT COUNT) para contar os animais direto na busca do dono
+            # Contar os animais direto na busca do dono
             cursor.execute("""
                 SELECT d.id_dono, d.nome, d.usuario, d.telefone, d.status_dono,
                        d.cor_brinco, d.descricao_marca, d.perfil,
@@ -69,8 +72,9 @@ def gerenciar_proprietarios(request):
                 d['perfil'] = d['perfil'] or 'Dono'
                 
         return JsonResponse(donos, safe=False)
-
-    elif request.method == 'POST':
+    
+#Método POST para criar um novo dono, recebendo os dados do frontend, inserindo no banco, e retornando o ID do dono criado 
+    elif request.method == 'POST': 
         try:
             dados = json.loads(request.body)
             with connection.cursor() as cursor:
@@ -90,12 +94,13 @@ def gerenciar_proprietarios(request):
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
 
 @csrf_exempt
+#O método atualiza os dados do dono
 def detalhe_proprietario(request, id_dono):
-    if request.method == 'PUT':
+    if request.method == 'PUT': 
         try:
             dados = json.loads(request.body)
             with connection.cursor() as cursor:
-                # DEBUG: COALESCE usa o dado novo, mas se vier vazio (NULL), mantém o dado antigo do banco
+                # COALESCE usa o dado novo, mas se vier vazio (NULL), mantém o dado antigo do banco
                 cursor.execute("""
                     UPDATE dono 
                     SET nome = COALESCE(%s, nome),
@@ -120,36 +125,42 @@ def detalhe_proprietario(request, id_dono):
             
     elif request.method == 'DELETE':
         with connection.cursor() as cursor:
-            # DEBUG: O Cascade no banco resolve os animais, mas deletamos o dono aqui
+            # O Cascade no banco resolve os animais, mas deletamos o dono aqui
             cursor.execute("DELETE FROM dono WHERE id_dono = %s", [id_dono])
         return JsonResponse({'sucesso': True})
 
 
 # ------------------------- ANIMAIS -------------------------
 @csrf_exempt
+#O método gerenciar_animais é responsável por lidar com as requisições relacionadas aos animais. Ele suporta os métodos GET para listar os animais e POST para criar um novo animal. No GET, ele busca os animais no banco, junta as informações do dono, categoria e leilão usando LEFT JOINs, e formata os dados para o frontend. No POST, ele insere um novo animal no banco e retorna o ID do animal criado.
 def gerenciar_animais(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
-            # JOIN com dono e categoria para trazer mais informações na mesma query, e ordenação por ID decrescente para mostrar os mais recentes primeiro
             cursor.execute("""
                 SELECT a.id_animal as id, a.numero_brinco as nome, a.raca, a.status, a.sexo, 
                        a.peso, a.dt_nasc, d.nome as dono_nome, c.descricao as categoria_desc,
-                       a.id_dono, a.id_categoria
+                       COALESCE(l.nome_evento, 'Não vinculado') as leilao_nome,
+                       a.id_dono, a.id_categoria, a.id_leilao
                 FROM animal a
                 LEFT JOIN dono d ON a.id_dono = d.id_dono
                 LEFT JOIN categoria c ON a.id_categoria = c.id_categoria
-                ORDER BY a.id_animal DESC
+                LEFT JOIN leilao l ON a.id_leilao = l.id_leilao
+                ORDER BY d.nome ASC
             """)
-            animais = fetch_as_dict(cursor)
             
-            # Tratamento de nulos e formatação de datas para o frontend
+           # Transformar o resultado em lista de dicionários
+            colunas = [col[0] for col in cursor.description]
+            animais = [dict(zip(colunas, row)) for row in cursor.fetchall()]
+            
+            # Tratamento de nulos e formatação para o frontend
             for a in animais:
                 a['peso'] = float(a['peso']) if a['peso'] else 0.0
                 a['dt_nasc'] = a['dt_nasc'].strftime('%Y-%m-%d') if a['dt_nasc'] else ''
                 
         return JsonResponse(animais, safe=False)
         
-    elif request.method == 'POST': #Recebe os dados do novo animal, insere no banco, e retorna o ID do animal criado para o frontend atualizar a lista sem precisar de um GET completo
+    #O método POST para criar um novo animal, recebendo os dados do frontend, inserindo no banco, e retornando o ID do animal criado    
+    elif request.method == 'POST':
         try:
             dados = json.loads(request.body)
             with connection.cursor() as cursor:
@@ -166,10 +177,11 @@ def gerenciar_animais(request):
             return JsonResponse({'erro': str(e)}, status=400)
 
 @csrf_exempt
-def detalhe_animal(request, id_animal): # Recebe o ID do animal pela URL, e dependendo do método da requisição, ou atualiza os dados do animal (PUT) ou deleta o animal (DELETE)
-    if request.method == 'PUT': # Atualiza os dados do animal, usando COALESCE para manter os dados antigos caso o frontend não envie um campo específico, e retornando uma mensagem de sucesso ou erro para o frontend
+#O método detalhe_animal é responsável por lidar com as requisições relacionadas a um animal específico, identificado pelo id_animal. Ele suporta os métodos GET para obter os detalhes do animal, PUT para atualizar os dados do animal, e DELETE para remover o animal do banco. No PUT, ele usa a função COALESCE para atualizar apenas os campos que foram enviados no corpo da requisição, mantendo os valores antigos para os campos que não foram enviados.
+def detalhe_animal(request, id_animal):
+    if request.method == 'PUT':
         try:
-            dados = json.loads(request.body) 
+            dados = json.loads(request.body)
             with connection.cursor() as cursor:
                 cursor.execute("""
                     UPDATE animal 
@@ -217,7 +229,7 @@ def gerenciar_categorias(request):
         except Exception as e:
             return JsonResponse({'erro': str(e)}, status=400)
         
-@csrf_exempt #-> Essa função é usada tanto para GET, PUT e DELETE, então o @csrf_exempt é necessário para aceitar requisições de fora do Django sem token CSRF
+@csrf_exempt
 def detalhe_categoria(request, id_categoria): #O id_categoria vem da URL, e é usado para identificar qual categoria estamos buscando, editando ou deletando. Ele é passado como argumento para a função detalhe_categoria, e depois usado nas queries SQL para filtrar pela categoria correta.
     if request.method == 'GET':
         with connection.cursor() as cursor:
@@ -257,13 +269,14 @@ import datetime # Necessário para converter strings em datas de forma segura
 from datetime import date
 
 @csrf_exempt
+#O método gerenciar_leiloes é responsável por lidar com as requisições relacionadas aos leilões. Ele suporta os métodos GET para listar os leilões e POST para criar um novo leilão. No GET, ele busca os leilões no banco, formata as datas e associa os animais vinculados a cada leilão. No POST, ele insere um novo leilão no banco e vincula os animais selecionados a esse leilão usando o operador ANY do PostgreSQL para atualizar múltiplos registros de uma vez.
 def gerenciar_leiloes(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
             cursor.execute("SELECT id_leilao, nome_evento, dt_leilao, custo_fixo, local FROM leilao ORDER BY dt_leilao")
             leiloes = fetch_as_dict(cursor)
             
-            # DEBUG: Busca todos os animais que têm um leilão vinculado
+            # Busca todos os animais que têm um leilão vinculado
             cursor.execute("SELECT id_animal as id, numero_brinco as nome, raca, id_leilao FROM animal WHERE id_leilao IS NOT NULL")
             animais_vinculados = fetch_as_dict(cursor)
             
@@ -339,7 +352,7 @@ def detalhe_leilao(request, id_leilao):
 
     elif request.method == 'DELETE':
         with connection.cursor() as cursor:
-            # Desvincula animais antes de deletar o leilão para não violar a chave estrangeira (Integridade Referencial)
+            # Desvincula animais antes de deletar o leilão para não violar a chave estrangeira
             cursor.execute("UPDATE animal SET id_leilao = NULL WHERE id_leilao = %s", [id_leilao])
             cursor.execute("DELETE FROM leilao WHERE id_leilao = %s", [id_leilao])
         return JsonResponse({'sucesso': True})

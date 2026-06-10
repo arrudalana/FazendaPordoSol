@@ -45,18 +45,20 @@
             Nenhum proprietário encontrado.
           </div>
           
+          <!-- Aparição da etiqueta indicando o perfil-->
           <div v-for="prop in proprietariosFiltrados" :key="prop.id_dono" class="prop-card">
             <div class="card-header">
               <h3 class="card-name">{{ prop.nome }}</h3>
-              <span class="badge-perfil">{{ prop.perfil }}</span>
+              <span class="badge-perfil">{{ prop.perfil }}</span> <!-- Etiqueta indicando o perfil -->
             </div>
             
             <p class="card-sub">{{ prop.status_dono === 'A' ? 'Status: Ativo' : 'Status: Inativo' }}</p>
             
-            <div class="card-info">
+            <div class="card-info"> <!-- Informações do proprietário com ícones -->
               <p><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> Usuário: {{ prop.usuario }}</p>
               <p><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg> {{ prop.telefone }}</p>
               <p><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> {{ prop.descricao_marca }}</p>
+              <p><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg> Animais na Fazenda: {{ prop.total_animais }}</p>
             </div>
 
             <div class="card-footer">
@@ -85,7 +87,7 @@
       </div>
 
       <div class="content-card form-card"> 
-        <form @submit.prevent="salvarProprietario" class="form-grid"> // Formulário para criar ou editar proprietário
+        <form @submit.prevent="salvarProprietario" class="form-grid"> 
           <div class="input-group">
             <label>Nome Completo</label>
             <input type="text" v-model="form.nome" required placeholder="Ex: Deivid Apoitia">
@@ -106,6 +108,7 @@
             <input type="text" v-model="form.telefone" placeholder="(65) 99999-9999">
           </div>
 
+          
           <div class="input-group">
             <label>Perfil de Acesso</label>
             <div class="select-wrapper">
@@ -195,6 +198,7 @@ const mostrarMensagem = (texto) => {
   setTimeout(() => { mensagemFeedback.value = ''; }, 3000);
 };
 
+// Abrir formulário para novo cadastro
 const abrirFormulario = () => {
   form.nome = ''; form.usuario = ''; form.senha = ''; form.telefone = ''; 
   form.perfil = 'Dono'; form.status_dono = 'A'; form.descricao_marca = '';
@@ -202,10 +206,11 @@ const abrirFormulario = () => {
   telaAtual.value = 'formulario';
 };
 
+// Abrir formulário para edição
 const editarProprietario = (prop) => {
   form.nome = prop.nome;
   form.usuario = prop.usuario;
-  form.senha = ''; // Não trazemos a senha por segurança
+  form.senha = ''; 
   form.telefone = prop.telefone;
   form.perfil = prop.perfil;
   form.status_dono = prop.status_dono;
@@ -214,6 +219,7 @@ const editarProprietario = (prop) => {
   telaAtual.value = 'formulario';
 };
 
+// Voltar para a lista
 const voltarParaLista = () => {
   telaAtual.value = 'lista';
 };
