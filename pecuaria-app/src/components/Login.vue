@@ -40,7 +40,7 @@
           </div>
         </div>
 
-        <div v-if="mensagemErro" class="erro-alerta"> // Exibe mensagens de erro vindas do backend, como "Usuário não encontrado" ou "Senha incorreta" //
+        <div v-if="mensagemErro" class="erro-alerta"> <!--Exibe mensagens de erro vindas do backend, como "Usuário não encontrado" ou "Senha incorreta"-->
           {{ mensagemErro }}
         </div>
 

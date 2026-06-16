@@ -19,4 +19,9 @@ urlpatterns = [
     # Leilões
     path('leiloes/', views.gerenciar_leiloes, name='gerenciar_leiloes'),
     path('leiloes/<int:id_leilao>/', views.detalhe_leilao, name='detalhe_leilao'),
+
+    # Vendas
+    path('vendas/', views.gerenciar_vendas, name='gerenciar_vendas'),
+    path('vendas/importar-leilao/', views.importar_vendas_leilao, name='importar_vendas_leilao'),
+    path('vendas/<int:id_venda>/', views.detalhe_venda, name='detalhe_venda'),
 ]

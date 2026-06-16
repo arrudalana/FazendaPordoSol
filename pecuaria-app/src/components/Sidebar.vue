@@ -1,9 +1,7 @@
 <template>
   <div class="sidebar-container">
-    <!-- Cabeçalho com Logo -->
     <div class="sidebar-header">
       <div class="logo-box">
-        <!-- Verifique se o caminho da imagem abaixo está correto no seu projeto -->
         <img src="../assets/logo_por_do_sol.png" alt="Logo Pôr do Sol">
       </div>
       <div class="title-box">
@@ -14,37 +12,25 @@
 
     <div class="divider"></div>
 
-    <!-- Menu de Navegação -->
     <nav class="sidebar-nav">
       <ul class="nav-list">
-        <li class="nav-item" :class="{ active: menuAtivo === 'dashboard' }" @click="navegarPara('dashboard')">
-          Dashboard
-        </li>
-        <li class="nav-item" :class="{ active: menuAtivo === 'animais' }" @click="navegarPara('animais')">
-          Animais
-        </li>
-        <li class="nav-item" :class="{ active: menuAtivo === 'proprietarios' }" @click="navegarPara('proprietarios')">
-          Proprietários
-        </li>
-        <li class="nav-item" :class="{ active: menuAtivo === 'leiloes' }" @click="navegarPara('leiloes')">
-           Leilões
-        </li>
-        <li class="nav-item" :class="{ active: menuAtivo === 'vendas' }" @click="navegarPara('vendas')">
-          Vendas
-        </li>
-        <li class="nav-item" :class="{ active: menuAtivo === 'medicamentos' }" @click="navegarPara('medicamentos')">
-           Medicamentos
-        </li>
+        <li class="nav-item" :class="{ active: menuAtivo === 'dashboard' }" @click="navegarPara('dashboard')">Dashboard</li>
+        <li class="nav-item" :class="{ active: menuAtivo === 'animais' }" @click="navegarPara('animais')">Animais</li>
+        <li class="nav-item" :class="{ active: menuAtivo === 'proprietarios' }" @click="navegarPara('proprietarios')">Proprietários</li>
+        <li class="nav-item" :class="{ active: menuAtivo === 'leiloes' }" @click="navegarPara('leiloes')">Leilões</li>
+        <li class="nav-item" :class="{ active: menuAtivo === 'vendas' }" @click="navegarPara('vendas')">Vendas</li>
+        <li class="nav-item" :class="{ active: menuAtivo === 'medicamentos' }" @click="navegarPara('medicamentos')">Medicamentos</li>
       </ul>
     </nav>
 
-    <!-- Rodapé com Usuário -->
     <div class="sidebar-footer">
       <div class="user-section">
         <div class="user-avatar">{{ inicialLetra }}</div>
         <div class="user-info">
+          <!-- Exibe o nome do proprietário -->
           <span class="user-role">{{ nomeUsuario }}</span>
-          <span class="user-email">administrador@pecuaria.com</span>
+          <!-- Exibe o login/email do usuário -->
+          <span class="user-email">{{ usuarioLogin }}</span>
         </div>
       </div>
       <button class="btn-sair" @click="sairDoSistema">
@@ -58,11 +44,12 @@
 import { ref, computed } from 'vue';
 
 const props = defineProps({
-  nomeUsuario: { type: String, default: 'Usuário' }
+  nomeUsuario: { type: String, default: 'Usuário' },
+  usuarioLogin: { type: String, default: 'usuario@email.com' }
 });
 
 const emit = defineEmits(['mudar-tela']);
-const menuAtivo = ref('animais'); // Define Animais como padrão ao carregar
+const menuAtivo = ref('animais');
 
 const navegarPara = (tela) => {
   menuAtivo.value = tela;
@@ -79,6 +66,7 @@ const sairDoSistema = () => {
 </script>
 
 <style scoped>
+/* Mantenha exatamente os estilos que você já tinha */
 .sidebar-container {
   width: 260px;
   height: 100vh;
@@ -87,32 +75,24 @@ const sairDoSistema = () => {
   flex-direction: column;
   box-shadow: 2px 0 15px rgba(0,0,0,0.05);
 }
-
 .sidebar-header {
   display: flex;
   align-items: center;
   padding: 25px 20px;
   gap: 15px;
 }
-
 .logo-box img { width: 45px; height: auto; }
-
 .brand-title {
-  font-family: "Anton SC", sans-serif; 
+  font-family: "Anton SC", sans-serif;
   font-size: 18px;
   color: #ff7322;
   margin: 0;
   line-height: 1.1;
 }
-
 .brand-subtitle { font-size: 11px; color: #64748b; margin: 4px 0 0 0; }
-
 .divider { height: 1px; background-color: rgba(255, 115, 34, 0.1); margin: 0 20px; }
-
 .sidebar-nav { padding: 20px 10px; flex-grow: 1; }
-
 .nav-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 5px; }
-
 .nav-item {
   display: flex;
   align-items: center;
@@ -120,27 +100,20 @@ const sairDoSistema = () => {
   border-radius: 8px;
   cursor: pointer;
   font-size: 15px;
-  color: #ff7322; /* Cor padrão laranja */
+  color: #ff7322;
   transition: 0.2s;
 }
-
-/* ITEM ATIVO: Laranja sólido com texto branco conforme a imagem */
 .nav-item.active {
-  background-color: #ff7322; 
+  background-color: #ff7322;
   color: #ffffff;
   font-weight: 600;
 }
-
 .nav-item:hover:not(.active) {
   background-color: rgba(255, 115, 34, 0.05);
 }
-
 .icon { margin-right: 15px; font-size: 18px; }
-
 .sidebar-footer { padding-bottom: 20px; border-top: 1px solid #f1f5f9; }
-
 .user-section { display: flex; align-items: center; padding: 20px; gap: 12px; }
-
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -153,11 +126,9 @@ const sairDoSistema = () => {
   font-weight: 900;
   font-size: 20px;
 }
-
 .user-info { display: flex; flex-direction: column; overflow: hidden; }
 .user-role { font-weight: bold; font-size: 14px; color: #1e293b; }
 .user-email { font-size: 11px; color: #64748b; }
-
 .btn-sair {
   background: transparent;
   border: none;
