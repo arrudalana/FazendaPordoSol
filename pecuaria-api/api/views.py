@@ -18,7 +18,6 @@ def realizar_login(request):
             usuario_input = dados.get('email')
             senha_input = dados.get('senha')
 
-        
             with connection.cursor() as cursor:
                 cursor.execute("""
                     SELECT nome, senha, perfil, usuario
@@ -47,7 +46,6 @@ def realizar_login(request):
 # ------------------------- PROPRIETÁRIOS -------------------------
 @csrf_exempt
 def gerenciar_proprietarios(request):
-    # Gerencia a listagem e criação de proprietários (donos)
     if request.method == 'GET':
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -65,7 +63,6 @@ def gerenciar_proprietarios(request):
         return JsonResponse(donos, safe=False)
 
     elif request.method == 'POST':
-        # Gerencia a criação de um novo proprietário (dono)
         try:
             dados = json.loads(request.body)
             with connection.cursor() as cursor:
@@ -84,7 +81,6 @@ def gerenciar_proprietarios(request):
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
 
 @csrf_exempt
-# Gerencia a atualização e exclusão de um proprietário (dono) específico
 def detalhe_proprietario(request, id_dono):
     if request.method == 'PUT':
         try:
@@ -110,14 +106,12 @@ def detalhe_proprietario(request, id_dono):
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
 
     elif request.method == 'DELETE':
-        # Antes de excluir o dono, desvincula os animais associados a ele
         with connection.cursor() as cursor:
             cursor.execute("DELETE FROM dono WHERE id_dono = %s", [id_dono])
         return JsonResponse({'sucesso': True})
 
 # ------------------------- ANIMAIS -------------------------
 @csrf_exempt
-# Gerencia a listagem e criação de animais, incluindo detalhes como dono, categoria e leilão associado
 def gerenciar_animais(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
@@ -139,7 +133,6 @@ def gerenciar_animais(request):
                 a['dt_nasc'] = a['dt_nasc'].strftime('%Y-%m-%d') if a['dt_nasc'] else ''
         return JsonResponse(animais, safe=False)
 
-# Gerencia a criação de um novo animal, incluindo validações para campos obrigatórios e tratamento de dados relacionados a dono, categoria e leilão
     elif request.method == 'POST':
         try:
             dados = json.loads(request.body)
@@ -159,7 +152,6 @@ def gerenciar_animais(request):
             return JsonResponse({'erro': str(e)}, status=400)
 
 @csrf_exempt
-# Gerencia a atualização e exclusão de um animal específico, incluindo validações para campos obrigatórios e tratamento de dados relacionados a dono, categoria e leilão
 def detalhe_animal(request, id_animal):
     if request.method == 'PUT':
         try:
@@ -187,7 +179,6 @@ def detalhe_animal(request, id_animal):
             return JsonResponse({'erro': str(e)}, status=400)
 
     elif request.method == 'DELETE':
-        # Antes de excluir o animal, desvincula-o de qualquer leilão associado
         with connection.cursor() as cursor:
             cursor.execute("DELETE FROM animal WHERE id_animal = %s", [id_animal])
         return JsonResponse({'sucesso': True})
@@ -195,7 +186,6 @@ def detalhe_animal(request, id_animal):
 # ------------------------- CATEGORIAS -------------------------
 @csrf_exempt
 def gerenciar_categorias(request):
-    # Gerencia a listagem e criação de categorias, incluindo detalhes como descrição e nome da categoria
     if request.method == 'GET':
         with connection.cursor() as cursor:
             cursor.execute("SELECT id_categoria, descricao, nome_categoria FROM categoria ORDER BY id_categoria")
@@ -215,7 +205,6 @@ def gerenciar_categorias(request):
             return JsonResponse({'erro': str(e)}, status=400)
 
 @csrf_exempt
-# Gerencia a atualização e exclusão de uma categoria específica, incluindo validações para campos obrigatórios e tratamento de dados relacionados a animais vinculados à categoria
 def detalhe_categoria(request, id_categoria):
     if request.method == 'GET':
         with connection.cursor() as cursor:
@@ -226,7 +215,6 @@ def detalhe_categoria(request, id_categoria):
             return JsonResponse({'id': row[0], 'descricao': row[1], 'nome_categoria': row[2]})
     elif request.method == 'PUT':
         try:
-            # Atualiza os detalhes de uma categoria específica, permitindo a modificação da descrição e do nome da categoria, com tratamento de dados para garantir a integridade das informações
             dados = json.loads(request.body)
             with connection.cursor() as cursor:
                 cursor.execute("""
@@ -239,7 +227,6 @@ def detalhe_categoria(request, id_categoria):
         except Exception as e:
             return JsonResponse({'erro': str(e)}, status=400)
         
-    # Antes de excluir a categoria, desvincula os animais associados a ela, definindo o id_categoria como NULL    
     elif request.method == 'DELETE':
         with connection.cursor() as cursor:
             cursor.execute("DELETE FROM categoria WHERE id_categoria = %s", [id_categoria])
@@ -247,55 +234,36 @@ def detalhe_categoria(request, id_categoria):
 
 # ------------------------- LEILÕES -------------------------
 @csrf_exempt
-# Gerencia a listagem e criação de leilões, incluindo detalhes como nome do evento, data, custo fixo, local e animais vinculados ao leilão, com tratamento de dados para exibir o status do leilão com base na data atual e para garantir a integridade das informações relacionadas aos animais vinculados ao leilão
 def gerenciar_leiloes(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
             cursor.execute("SELECT id_leilao, nome_evento, dt_leilao, custo_fixo, local FROM leilao ORDER BY dt_leilao")
             leiloes = fetch_as_dict(cursor)
-            cursor.execute("SELECT id_animal as id, numero_brinco as nome, raca, id_leilao FROM animal WHERE id_leilao IS NOT NULL")
+            cursor.execute("SELECT id_animal as id, numero_brinco as nome, raca, id_leilao, peso, id_dono FROM animal WHERE id_leilao IS NOT NULL")
             animais_vinculados = fetch_as_dict(cursor)
             hoje = date.today()
 
-            # Para cada leilão, determina o status com base na data do leilão em relação à data atual, atribuindo classes de cor e textos de status apropriados para indicar se o leilão é realizado, agendado para o futuro ou se ocorreu recentemente, além de vincular os animais associados a cada leilão para exibição detalhada
             for l in leiloes:
                 l['custo_fixo'] = float(l['custo_fixo']) if l['custo_fixo'] is not None else 0.0
                 dt_leilao_obj = l['dt_leilao']
                 if isinstance(dt_leilao_obj, str):
                     try:
-                        # Converte a string de data para um objeto date, tratando possíveis erros de formatação
                         dt_leilao_obj = datetime.strptime(dt_leilao_obj, '%Y-%m-%d').date()
                     except ValueError:
                         dt_leilao_obj = None
 
-                # Determina o status do leilão com base na data, atribuindo classes de cor e textos de status para indicar se o leilão é realizado, agendado para o futuro ou se ocorreu recentemente, considerando um período de 45 dias para diferenciar entre leilões recentes e antigos
                 if dt_leilao_obj and dt_leilao_obj < hoje:
-                    dias_atraso = (hoje - dt_leilao_obj).days
-                    if dias_atraso > 45:
-                        l['color_class'] = 'card-realizado-antigo'
-                        l['status_text'] = 'Realizado (+45 dias)'
-                    else:
-                        l['color_class'] = 'card-realizado'
-                        l['status_text'] = 'Realizado'
-                elif dt_leilao_obj and dt_leilao_obj > hoje:
-                    dias_futuro = (dt_leilao_obj - hoje).days
-                    if dias_futuro > 45:
-                        l['color_class'] = 'card-agendado-futuro'
-                        l['status_text'] = 'Possível Leilão'
-                        l['extra_label'] = '📅 Possível Leilão'
-                    else:
-                        l['color_class'] = 'card-agendado-proximo'
-                        l['status_text'] = 'Agendado'
+                    l['color_class'] = 'badge-verde'
+                    l['status_text'] = 'Realizado'
                 else:
-                    l['color_class'] = 'card-agendado-proximo'
-                    l['status_text'] = 'Hoje'
+                    l['color_class'] = 'badge-amarelo'
+                    l['status_text'] = 'Agendado'
 
                 l['dt_leilao'] = dt_leilao_obj.strftime('%Y-%m-%d') if dt_leilao_obj else ''
                 l['animais'] = [a for a in animais_vinculados if a['id_leilao'] == l['id_leilao']]
 
         return JsonResponse(leiloes, safe=False)
 
-    # Gerencia a criação de um novo leilão, incluindo validações para campos obrigatórios e tratamento de dados relacionados aos animais vinculados ao leilão, garantindo a integridade das informações e a associação correta dos animais ao leilão criado
     elif request.method == 'POST':
         try:
             dados = json.loads(request.body)
@@ -312,7 +280,6 @@ def gerenciar_leiloes(request):
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
 
 @csrf_exempt
-# Gerencia a atualização e exclusão de um leilão específico, incluindo validações para campos obrigatórios e tratamento de dados relacionados aos animais vinculados ao leilão, garantindo a integridade das informações e a associação correta dos animais ao leilão atualizado ou excluído, além de garantir que os animais sejam desvinculados do leilão caso este seja excluído, para manter a consistência dos dados no sistema
 def detalhe_leilao(request, id_leilao):
     if request.method == 'PUT':
         try:
@@ -339,9 +306,79 @@ def detalhe_leilao(request, id_leilao):
             cursor.execute("DELETE FROM leilao WHERE id_leilao = %s", [id_leilao])
         return JsonResponse({'sucesso': True})
 
+@csrf_exempt
+def info_detalhada_leilao(request, id_leilao):
+    if request.method == 'GET':
+        try:
+            with connection.cursor() as cursor:
+                # 1. Dados Básicos do Leilão
+                cursor.execute("SELECT nome_evento, dt_leilao, local, custo_fixo FROM leilao WHERE id_leilao = %s", [id_leilao])
+                leilao_info = cursor.fetchone()
+                if not leilao_info:
+                    return JsonResponse({'erro': 'Leilão não encontrado'}, status=404)
+
+                data_leilao = leilao_info[1]
+                hoje = date.today()
+                status_text = 'Realizado' if data_leilao and data_leilao < hoje else 'Agendado'
+
+                # 2. Métricas dos Animais
+                cursor.execute("""
+                    SELECT COUNT(id_animal), SUM(peso), AVG(peso), COUNT(DISTINCT id_dono)
+                    FROM animal
+                    WHERE id_leilao = %s
+                """, [id_leilao])
+                metricas = cursor.fetchone()
+                qtd_animais = metricas[0] or 0
+                peso_total = float(metricas[1]) if metricas[1] else 0.0
+                peso_medio = float(metricas[2]) if metricas[2] else 0.0
+                qtd_proprietarios = metricas[3] or 0
+
+                # 3. Categorias dos Animais
+                cursor.execute("""
+                    SELECT c.descricao, COUNT(*) as total
+                    FROM animal a
+                    JOIN categoria c ON a.id_categoria = c.id_categoria
+                    WHERE a.id_leilao = %s
+                    GROUP BY c.id_categoria, c.descricao
+                """, [id_leilao])
+                categorias = fetch_as_dict(cursor)
+
+                # 4. Distribuição por Proprietário
+                cursor.execute("""
+                    SELECT d.nome, d.id_dono, COUNT(*) as total_animais
+                    FROM animal a
+                    JOIN dono d ON a.id_dono = d.id_dono
+                    WHERE a.id_leilao = %s
+                    GROUP BY d.id_dono, d.nome
+                """, [id_leilao])
+                proprietarios_dist = fetch_as_dict(cursor)
+
+                for p in proprietarios_dist:
+                    if qtd_animais > 0:
+                        p['porcentagem'] = round((p['total_animais'] / qtd_animais) * 100, 1)
+                    else:
+                        p['porcentagem'] = 0
+
+            return JsonResponse({
+                'id_leilao': id_leilao,
+                'nome_evento': leilao_info[0],
+                'dt_leilao': leilao_info[1].strftime('%Y-%m-%d') if leilao_info[1] else '',
+                'local': leilao_info[2],
+                'custo_fixo': float(leilao_info[3]) if leilao_info[3] else 0.0,
+                'status_text': status_text,
+                'qtd_animais': qtd_animais,
+                'peso_total': peso_total,
+                'peso_medio': peso_medio,
+                'qtd_proprietarios': qtd_proprietarios,
+                'categorias': categorias,
+                'distribuicao_proprietarios': proprietarios_dist
+            })
+
+        except Exception as e:
+            return JsonResponse({'erro': str(e)}, status=500)
+
 # ------------------------- VENDAS -------------------------
 @csrf_exempt
-# Gerencia a listagem e criação de vendas, incluindo detalhes como animal vendido, data da venda, vendedor, comprador, valor da venda, tipo de pagamento e leilão associado, com tratamento de dados para exibir as informações de forma clara e garantir a integridade das informações relacionadas às vendas registradas no sistema
 def gerenciar_vendas(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
@@ -362,7 +399,6 @@ def gerenciar_vendas(request):
         return JsonResponse(vendas, safe=False)
 
     elif request.method == 'POST':
-        # Gerencia a criação de uma nova venda, incluindo validações para campos obrigatórios e tratamento de dados relacionados ao animal vendido, vendedor, comprador, valor da venda, tipo de pagamento e leilão associado, garantindo a integridade das informações e a associação correta dos dados relacionados à venda registrada no sistema
         try:
             dados = json.loads(request.body)
             with connection.cursor() as cursor:
@@ -379,7 +415,6 @@ def gerenciar_vendas(request):
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
 
 @csrf_exempt
-# Gerencia a atualização e exclusão de uma venda específica, incluindo validações para campos obrigatórios e tratamento de dados relacionados ao animal vendido, vendedor, comprador, valor da venda, tipo de pagamento e leilão associado, garantindo a integridade das informações e a associação correta dos dados relacionados à venda atualizada ou excluída no sistema, além de exigir uma justificativa para alterações em vendas existentes para manter um histórico claro das modificações realizadas, e restringir a exclusão de vendas apenas para usuários com perfil de administrador para garantir a segurança e a integridade dos dados relacionados às vendas registradas no sistema
 def detalhe_venda(request, id_venda):
     if request.method == 'PUT':
         try:
@@ -422,10 +457,8 @@ def importar_vendas_leilao(request):
             id_leilao = dados.get('id_leilao')
             
             with connection.cursor() as cursor:
-                # 1. VALIDAÇÃO DE DATA (Só permite leilões do passado)
                 cursor.execute("SELECT dt_leilao FROM leilao WHERE id_leilao = %s", [id_leilao])
                 row_leilao = cursor.fetchone()
-                
                 if not row_leilao:
                     return JsonResponse({'sucesso': False, 'erro': 'Leilão não encontrado no sistema.'}, status=400)
                 
@@ -439,7 +472,6 @@ def importar_vendas_leilao(request):
                         'erro': 'Apenas leilões já realizados (data no passado) podem ser faturados em lote.'
                     }, status=400)
 
-                # 2. VALIDAÇÃO DE DUPLICIDADE (Não fatura o mesmo leilão duas vezes)
                 cursor.execute("SELECT COUNT(*) FROM venda WHERE id_leilao = %s", [id_leilao])
                 if cursor.fetchone()[0] > 0:
                     return JsonResponse({
@@ -447,7 +479,6 @@ def importar_vendas_leilao(request):
                         'erro': 'Este leilão já possui um faturamento registrado no sistema.'
                     }, status=400)
 
-                # 3. EXECUÇÃO DO FATURAMENTO
                 cursor.execute("""
                     INSERT INTO venda (id_animal, vendedor, comprador, vlr_venda, dt_venda, tp_pgto, id_leilao)
                     SELECT id_animal, %s, %s, %s, %s, %s, id_leilao

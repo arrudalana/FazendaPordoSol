@@ -39,34 +39,49 @@
       </div>
 
       <div class="content-card">
-        <div class="proprietarios-filtros-container">
-         
-          <div class="proprietarios-botoes">
-            <button 
-              :class="['btn-filtro-prop', { active: donoSelecionado === null }]"
-              @click="donoSelecionado = null"
-            >
-              Todos os Animais
-            </button>
-            <button 
-              v-for="dono in proprietariosOrdenados" 
-              :key="dono.id_dono"
-              :class="['btn-filtro-prop', { active: donoSelecionado === dono.id_dono }]"
-              @click="selecionarDonoFiltro(dono.id_dono)"
-            >
-              {{ dono.nome }}
-            </button>
-          </div>
-        </div>
+        <!-- ============================================================ -->
+        <!-- CONTÊINER ÚNICO: FILTRO E BUSCA LADO A LADO                   -->
+        <!-- ============================================================ -->
+        <div class="filtros-e-busca-container">
 
-        <div class="search-bar-container">
-          <div class="search-bar">
-            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input type="text" v-model="termoBusca" placeholder="Buscar por brinco, raça..." />
+          <!-- DROPDOWN DE PROPRIETÁRIO -->
+          <div class="custom-select-wrapper">
+            <div class="custom-select-trigger">
+              <div class="left-content">
+                <svg class="icon-user" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z">
+                  </path>
+                </svg>
+                <span>Proprietário</span>
+              </div>
+              <svg class="icon-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 8.25l-7.5 7.5-7.5-7.5">
+                </path>
+              </svg>
+            </div>
+
+            <select v-model="proprietarioSelecionado" class="hidden-select">
+              <option value="">Proprietário</option>
+              <option v-for="dono in proprietariosOrdenados" :key="dono.id_dono" :value="dono.id_dono">
+                {{ dono.nome }}
+              </option>
+            </select>
           </div>
+
+          <!-- CAMPO DE PESQUISA -->
+          <div class="search-bar-container">
+            <div class="search-bar">
+              <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              <input type="text" v-model="termoBusca" placeholder="Buscar por brinco, raça..." />
+            </div>
+          </div>
+
         </div>
+        <!-- FIM DO CONTÊINER ÚNICO DE FILTRO E BUSCA -->
 
         <div class="table-container">
           <table class="animais-table">
@@ -91,7 +106,8 @@
                 <td><strong>{{ animal.nome }}</strong></td>
                 <td>{{ animal.raca }}</td>
                 <td>
-                  <span v-if="animal.leilao_nome !== 'Não vinculado'" class="badge-leilao">{{ animal.leilao_nome }}</span>
+                  <span v-if="animal.leilao_nome !== 'Não vinculado'" class="badge-leilao">{{ animal.leilao_nome
+                    }}</span>
                   <span v-else class="text-muted">Não vinculado</span>
                 </td>
                 <td>{{ animal.peso }} kg</td>
@@ -102,19 +118,24 @@
                 </td>
                 <td>
                   <span v-if="animal.status === 'M'">
-                    {{ animal.causa_morte === 'N' ? 'Morte natural' : (animal.causa_morte === 'O' ? 'Ataque de onça' : 'Não informado') }}
+                    {{ animal.causa_morte === 'N' ? 'Morte natural' : (animal.causa_morte === 'O' ? 'Ataque de onça' :
+                    'Não informado') }}
                   </span>
                   <span v-else>-</span>
                 </td>
                 <td class="acoes text-right">
                   <button class="btn-acao edit" title="Editar" @click="editarAnimal(animal)">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                      </path>
                     </svg>
                   </button>
                   <button class="btn-acao delete" title="Excluir" @click="prepararExclusao(animal)">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                      </path>
                     </svg>
                   </button>
                 </td>
@@ -129,7 +150,8 @@
       <div class="page-header header-form">
         <button class="btn-voltar" @click="voltarParaLista" title="Voltar">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+            </path>
           </svg>
         </button>
         <div class="title-section">
@@ -233,15 +255,10 @@ const animalParaExcluir = ref(null);
 const listaProprietarios = ref([]);
 const listaCategorias = ref([]);
 const animais = ref([]);
+const termoBusca = ref('');
 
-const donoSelecionado = ref(null);
-
-// LÓGICA DE ORDENAÇÃO ALFABÉTICA ADICIONADA AQUI
-const proprietariosOrdenados = computed(() => {
-  return [...listaProprietarios.value].sort((a, b) => 
-    a.nome.localeCompare(b.nome, 'pt-BR')
-  );
-});
+// Nova variável de filtro por proprietário
+const proprietarioSelecionado = ref('');
 
 const formAnimal = reactive({
   nome: '', raca: '', peso: '', status: 'V', sexo: 'M', id_categoria: '', id_dono: '', causa_morte: ''
@@ -251,21 +268,30 @@ const dataAtual = new Date();
 const opcoesData = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
 const dataFormatada = ref(dataAtual.toLocaleDateString('pt-BR', opcoesData));
 
-const selecionarDonoFiltro = (idDono) => {
-  donoSelecionado.value = donoSelecionado.value === idDono ? null : idDono;
-};
-
-const animaisFiltrados = computed(() => {
-  const termo = termoBusca.value.toLowerCase();
-  return animais.value.filter(a => {
-    const bateTexto = (a.nome && a.nome.toLowerCase().includes(termo)) ||
-                     (a.raca && a.raca.toLowerCase().includes(termo));
-    const bateDonoBotao = !donoSelecionado.value || a.id_dono === donoSelecionado.value;
-    return bateTexto && bateDonoBotao;
-  });
+// Ordena os proprietários alfabeticamente para exibição nos filtros
+const proprietariosOrdenados = computed(() => {
+  return [...listaProprietarios.value].sort((a, b) =>
+    a.nome.localeCompare(b.nome, 'pt-BR')
+  );
 });
 
-const termoBusca = ref('');
+// Lógica que une Filtro (Dropdown) + Barra de Pesquisa
+const animaisFiltrados = computed(() => {
+  const termo = termoBusca.value.toLowerCase().trim();
+  return animais.value.filter(a => {
+    // 1. Verifica o texto de busca
+    const bateTexto = !termo ||
+      (a.nome && a.nome.toLowerCase().includes(termo)) ||
+      (a.raca && a.raca.toLowerCase().includes(termo)) ||
+      (a.dono_nome && a.dono_nome.toLowerCase().includes(termo));
+
+    // 2. Verifica o proprietário selecionado no Dropdown (convertendo string para número)
+    const idProprietarioFiltro = parseInt(proprietarioSelecionado.value);
+    const bateDono = !proprietarioSelecionado.value || a.id_dono === idProprietarioFiltro;
+
+    return bateTexto && bateDono;
+  });
+});
 
 const carregarProprietarios = async () => {
   try {
@@ -366,77 +392,508 @@ const salvarAnimal = async () => {
 </script>
 
 <style scoped>
-.animais-page { padding: 20px 40px; background-color: #f9f2ec; min-height: 100vh; font-family: 'Segoe UI', Tahoma, sans-serif; }
-.top-bar { border-bottom: 1px solid #ebdcd1; padding-bottom: 10px; margin-bottom: 25px; }
-.current-date { color: #8a7b72; font-size: 14px; margin: 0; text-transform: lowercase; }
+.animais-page {
+  padding: 20px 40px;
+  background-color: #f9f2ec;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
 
-.feedback-banner { position: fixed; top: 30px; right: 30px; z-index: 9999; background-color: #eafbee; color: #0b9e15; border: 1px solid #b7f0c1; padding: 15px 25px; border-radius: 8px; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 10px 25px rgba(11, 158, 21, 0.15); }
-.feedback-banner .icon { width: 22px; height: 22px; }
+.top-bar {
+  border-bottom: 1px solid #ebdcd1;
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+}
 
-.proprietarios-filtros-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; gap: 8px; width: 100%; }
-.filtro-label { font-size: 12px; font-weight: 700; color: #8a7b72; text-transform: uppercase; letter-spacing: 0.5px; }
-.proprietarios-botoes { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-.btn-filtro-prop { background-color: white; border: 1px solid #ffede3; color: #ff7322; padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
-.btn-filtro-prop:hover { background-color: #fffaf7; border-color: #ff7322; }
-.btn-filtro-prop.active { background-color: #ff7322; color: white; border-color: #ff7322; box-shadow: 0 4px 12px rgba(255, 115, 34, 0.2); }
+.current-date {
+  color: #8a7b72;
+  font-size: 14px;
+  margin: 0;
+  text-transform: lowercase;
+}
 
-.search-bar-container { display: flex; justify-content: flex-start; margin-bottom: 20px; }
-.search-bar { display: flex; align-items: center; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 15px; width: 100%; max-width: 400px; }
-.search-bar input { border: none; background: transparent; width: 100%; outline: none; font-size: 14px; color: #334155; }
-.search-icon { width: 20px; height: 20px; color: #94a3b8; margin-right: 10px; }
+.feedback-banner {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  z-index: 9999;
+  background-color: #eafbee;
+  color: #0b9e15;
+  border: 1px solid #b7f0c1;
+  padding: 15px 25px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 10px 25px rgba(11, 158, 21, 0.15);
+}
 
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); }
-.modal-title { font-family: "Anton SC", sans-serif; color: #ff7322; margin: 0 0 15px 0; font-size: 24px; text-transform: uppercase; }
-.modal-text { color: #ffb68c; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 15px; }
-.btn-modal-cancelar { background-color: white; color: #ff7322; border: 1px solid #ff7322; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-.btn-modal-excluir { background-color: #e60000; color: white; border: none; padding: 10px 25px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.feedback-banner .icon {
+  width: 22px;
+  height: 22px;
+}
 
-.page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
-.page-title { font-family: "Anton SC", sans-serif; font-size: 32px; color: #1e293b; margin: 0; letter-spacing: 0.5px; text-transform: uppercase; }
-.page-subtitle { color: #64748b; font-size: 15px; margin: 5px 0 0 0; }
-.btn-novo { background-color: #ff7322; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-.content-card { background: #ffffff; border-radius: 10px; padding: 30px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); border: 1px solid #f0e6de; }
-.form-card { border: 1px solid #ff7322; }
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
 
-.table-container { overflow-x: auto; }
-.animais-table { width: 100%; border-collapse: collapse; font-size: 14px; color: #1e293b; }
-.animais-table th { text-align: left; padding: 15px 10px; color: #1e293b; font-weight: 600; border-bottom: 2px solid #f1f5f9; }
-.animais-table td { padding: 15px 10px; border-bottom: 1px solid #f1f5f9; }
-.tabela-vazia { text-align: center !important; color: #94a3b8; padding: 30px !important; font-style: italic; }
-.status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-.status-ativo { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.status-doente { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-.badge-leilao { background-color: #fffaf7; color: #ea580c; border: 1px solid #ffede3; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; }
-.text-muted { color: #94a3b8; font-style: italic; font-size: 13px; }
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
 
-.acoes { display: flex; gap: 10px; justify-content: flex-end; }
-.btn-acao { background: transparent; border: none; cursor: pointer; color: #ff7322; border-radius: 4px; padding: 4px; }
-.btn-acao svg { width: 18px; height: 18px; }
+.modal-title {
+  font-family: "Anton SC", sans-serif;
+  color: #ff7322;
+  margin: 0 0 15px 0;
+  font-size: 24px;
+  text-transform: uppercase;
+}
 
-.header-form { display: flex; align-items: center; justify-content: flex-start; gap: 20px; }
-.btn-voltar { background: none; border: none; color: #ff7322; cursor: pointer; display: flex; align-items: center; }
-.btn-voltar svg { width: 24px; height: 24px; }
-.section-title { font-size: 14px; font-weight: 900; color: #ff7322; text-transform: uppercase; margin-bottom: 25px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px 40px; }
-.input-group { display: flex; flex-direction: column; gap: 8px; }
-.input-group label { font-size: 13px; font-weight: 500; color: #ff7322; }
-.required-star { color: #e60000; margin-left: 4px; }
-.input-group input, .select-wrapper select { width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid transparent; background-color: transparent; font-size: 14px; color: #ff7322; outline: none; }
-.input-group input:focus, .select-wrapper select:focus { border-bottom: 1px solid #ff7322; }
-.select-wrapper { position: relative; }
-.select-wrapper select { appearance: none; cursor: pointer; color: #ffb68c; }
-.select-wrapper select:focus, .select-wrapper select:not(:invalid) { color: #ff7322; }
-.select-wrapper::after { content: '▼'; font-size: 10px; color: #ffb68c; position: absolute; right: 5px; top: 50%; transform: translateY(-50%); pointer-events: none; }
-.full-width { grid-column: span 2; }
-.form-actions { display: flex; gap: 15px; margin-top: 40px; }
-.btn-salvar { background-color: #0b9e15; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; }
-.btn-cancelar { background-color: transparent; color: #ff7322; border: 1px solid #ffede3; padding: 12px 25px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.modal-text {
+  color: #ffb68c;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.btn-modal-cancelar {
+  background-color: white;
+  color: #ff7322;
+  border: 1px solid #ff7322;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-modal-excluir {
+  background-color: #e60000;
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 30px;
+}
+
+.page-title {
+  font-family: "Anton SC", sans-serif;
+  font-size: 32px;
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.page-subtitle {
+  color: #64748b;
+  font-size: 15px;
+  margin: 5px 0 0 0;
+}
+
+.btn-novo {
+  background-color: #ff7322;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.content-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f0e6de;
+}
+
+.form-card {
+  border: 1px solid #ff7322;
+}
+
+/* ===========================================================
+   ALTERAÇÕES DE LAYOUT: ALINHANDO FILTRO E BUSCA
+   =========================================================== */
+.filtros-e-busca-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  /* Garante que quebre linha se a tela for pequena */
+}
+
+/* 1. Ajustes do Dropdown (Filtro de Proprietário) */
+.custom-select-wrapper {
+  position: relative;
+  width: 220px;
+  /* Largura um pouco maior para acomodar o texto */
+  height: 44px;
+  /* Altura fixa padrão para inputs */
+}
+
+.custom-select-trigger {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border: 1.5px solid #ff7322;
+  /* Borda Laranja */
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #ff7322;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.custom-select-trigger .left-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-select-trigger .icon-user,
+.custom-select-trigger .icon-arrow {
+  width: 20px;
+  height: 20px;
+  stroke: #ff7322;
+}
+
+.hidden-select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* 2. Ajustes da Barra de Busca */
+.search-bar-container {
+  flex: 1;
+  max-width: 450px;
+  /* Limita largura máxima */
+  height: 44px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1.5px solid #ff7322;
+  /* Borda Laranja aplicada aqui também */
+  border-radius: 8px;
+  padding: 0 16px;
+  height: 100%;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.search-bar input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  outline: none;
+  font-size: 14px;
+  color: #334155;
+  padding-left: 8px;
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+  color: #ff7322;
+  /* Ícone de busca também na cor laranja */
+  flex-shrink: 0;
+}
+
+/* ===========================================================
+   FIM DAS ALTERAÇÕES DE LAYOUT
+   =========================================================== */
+
+.table-container {
+  overflow-x: auto;
+}
+
+.animais-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.animais-table th {
+  text-align: left;
+  padding: 15px 10px;
+  color: #1e293b;
+  font-weight: 600;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.animais-table td {
+  padding: 15px 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tabela-vazia {
+  text-align: center !important;
+  color: #94a3b8;
+  padding: 30px !important;
+  font-style: italic;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-ativo {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.status-doente {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.badge-leilao {
+  background-color: #fffaf7;
+  color: #ea580c;
+  border: 1px solid #ffede3;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.text-muted {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.acoes {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-acao {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ff7322;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.btn-acao svg {
+  width: 18px;
+  height: 18px;
+}
+
+.header-form {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 20px;
+}
+
+.btn-voltar {
+  background: none;
+  border: none;
+  color: #ff7322;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.btn-voltar svg {
+  width: 24px;
+  height: 24px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ff7322;
+  text-transform: uppercase;
+  margin-bottom: 25px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px 40px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ff7322;
+}
+
+.required-star {
+  color: #e60000;
+  margin-left: 4px;
+}
+
+.input-group input,
+.select-wrapper select {
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid transparent;
+  background-color: transparent;
+  font-size: 14px;
+  color: #ff7322;
+  outline: none;
+}
+
+.input-group input:focus,
+.select-wrapper select:focus {
+  border-bottom: 1px solid #ff7322;
+}
+
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper select {
+  appearance: none;
+  cursor: pointer;
+  color: #ffb68c;
+}
+
+.select-wrapper select:focus,
+.select-wrapper select:not(:invalid) {
+  color: #ff7322;
+}
+
+.select-wrapper::after {
+  content: '▼';
+  font-size: 10px;
+  color: #ffb68c;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 40px;
+}
+
+.btn-salvar {
+  background-color: #0b9e15;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-cancelar {
+  background-color: transparent;
+  color: #ff7322;
+  border: 1px solid #ffede3;
+  padding: 12px 25px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
 
 @media (max-width: 768px) {
-  .animais-page { padding: 15px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .full-width { grid-column: span 1; }
+  .animais-page {
+    padding: 15px;
+  }
+
+  .filtros-e-busca-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-select-wrapper {
+    width: 100%;
+  }
+
+  .search-bar-container {
+    max-width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: span 1;
+  }
 }
 </style>
