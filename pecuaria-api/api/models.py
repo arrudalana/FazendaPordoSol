@@ -66,3 +66,24 @@ class Animal(models.Model):
     class Meta:
         db_table = 'animal'
         managed = False
+class Medicamento(models.Model):
+    id_medicamento = models.AutoField(primary_key=True)
+    nome = models.CharField(max_length=150)
+    tp_medicamento = models.CharField(max_length=3) # 'VAC', 'ANT', 'PAR', 'OUT'
+
+    class Meta:
+        db_table = 'medicamento'
+        managed = False  # Django não cria a tabela
+
+class Aplicacao(models.Model):
+    id_animal = models.ForeignKey(Animal, on_delete=models.CASCADE, db_column='id_animal', primary_key=True) # Parte da PK composta
+    id_medicamento = models.ForeignKey(Medicamento, on_delete=models.CASCADE, db_column='id_medicamento') # Parte da PK composta
+    dt_aplicacao = models.DateField()
+    lote = models.CharField(max_length=50, null=True, blank=True)
+    informado_indea = models.CharField(max_length=1) # 'S' ou 'N'
+
+    class Meta:
+        db_table = 'aplicacao'
+        # Nota: O Django ORM não suporta nativamente Chaves Primárias Compostas.
+        # Definir id_animal como primary_key=True aqui é apenas um hack para o Django ler.
+        managed = False # Django não cria a tabela

@@ -6,6 +6,8 @@ import Animais from './components/Animais.vue';
 import Proprietarios from './components/Proprietarios.vue';
 import Leiloes from './components/Leiloes.vue';
 import Vendas from './components/Vendas.vue';
+import Medicamentos from './components/Medicamentos.vue';
+
 
 const usuarioLogado = ref(false);
 const nomeDono = ref('');
@@ -35,7 +37,7 @@ const mudarTela = (tela) => {
       <button class="btn-menu" @click="menuAberto = true">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
       </button>
-      <h2 class="anton-sc-regular title-mobile">Pôr do Sol</h2>
+      <h2 class="anton-sc-regular title-mobile">Fazenda Pôr do Sol</h2> <!-- Título do cabeçalho móvel -->
     </header>
 
     <div v-if="menuAberto" class="overlay-mobile" @click="menuAberto = false"></div>
@@ -53,6 +55,7 @@ const mudarTela = (tela) => {
       <Proprietarios v-else-if="telaAtual === 'proprietarios'" />
       <Leiloes v-else-if="telaAtual === 'leiloes'" />
       <Vendas v-else-if="telaAtual === 'vendas'" :perfil-usuario="perfilLogado" />
+      <Medicamentos v-else-if="telaAtual === 'medicamentos'" />
       <div v-else class="tela-placeholder">
         <h2 class="anton-sc-regular">Módulo: {{ telaAtual.toUpperCase() }}</h2>
         <p>(Telas não desenvolvidas)</p>

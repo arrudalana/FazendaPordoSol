@@ -26,4 +26,12 @@ urlpatterns = [
     path('vendas/importar-leilao/', views.importar_vendas_leilao, name='importar_vendas_leilao'),
     path('vendas/<int:id_venda>/', views.detalhe_venda, name='detalhe_venda'),
     
+    #Medicamentos e Aplicações
+    # Rota para GET (listar todos) e POST (criar novo)
+    path('medicamentos/', views.gerenciar_medicamentos, name='gerenciar_medicamentos'),
+    # Rota para GET (listar aplicações) e POST (criar nova aplicação)
+    path('aplicacoes/', views.gerenciar_aplicacoes, name='gerenciar_aplicacoes'),
+    # Rota para DELETE de uma aplicação (precisa dos dois IDs para a PK composta)
+    path('aplicacoes/<int:id_animal>/<int:id_medicamento>/', views.detalhe_aplicacao, name='detalhe_aplicacao'),
+    
 ]

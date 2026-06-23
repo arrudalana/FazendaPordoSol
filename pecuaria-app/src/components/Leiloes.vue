@@ -11,7 +11,6 @@
       {{ mensagemFeedback }}
     </div>
 
-    <!-- TELA DE LISTAGEM -->
     <div v-if="telaAtual === 'lista'">
       <div class="page-header">
         <div class="title-section">
@@ -26,7 +25,6 @@
         </button>
       </div>
 
-      <!-- BARRA DE FERRAMENTAS E FILTROS -->
       <div class="tools-bar">
         <div class="search-wrapper">
           <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,23 +43,20 @@
             @click="filtroStatus = 'Realizado'">Realizado</button>
         </div>
 
-        <div class="custom-select-container">
-          <div class="custom-select-trigger">
-            <svg class="icon-filter" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
-              </path>
-            </svg>
-            <span>Proprietário</span>
-            <svg class="icon-arrow-down" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </div>
-          <select v-model="filtroProprietario" class="hidden-select">
-            <option value="">Todos</option>
-            <option v-for="prop in listaProprietarios" :key="prop.id_dono" :value="prop.id_dono">{{ prop.nome }}
+        <div class="filtro-proprietario-custom">
+          <svg class="icon-user" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <select v-model="filtroProprietario">
+            <option value="">Proprietário</option>
+            <option v-for="prop in proprietariosOrdenados" :key="prop.id_dono" :value="prop.id_dono">
+              {{ prop.nome }}
             </option>
           </select>
+          <svg class="icon-seta" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
         </div>
       </div>
 
@@ -101,7 +96,6 @@
                 </span>
               </td>
               <td class="col-status">
-                <!-- ETIQUETAS DE STATUS CORRIGIDAS -->
                 <span class="status-badge" :class="leilao.badgeClass">{{ leilao.badgeText }}</span>
               </td>
               <td class="col-actions">
@@ -137,7 +131,6 @@
       </div>
     </div>
 
-    <!-- MODAL DE DETALHES (VALORES REMOVIDOS) -->
     <div v-if="mostrarModalDetalhes" class="modal-overlay">
       <div class="modal-detalhes-wrapper">
         <div class="modal-header-detalhes">
@@ -164,59 +157,63 @@
         </div>
 
         <div class="modal-body-detalhes">
-
           <div v-if="detalhesLeilao.erro" class="erro-detalhes">
             <h3>Erro ao carregar detalhes!</h3>
             <p>{{ detalhesLeilao.erro }}</p>
           </div>
 
           <div v-else-if="!detalhesLeilao.erro">
-            <!-- Blocos de Resumo (Apenas Animais e Proprietários) -->
             <div class="summary-blocks">
               <div class="summary-item">
-                <div class="icon-box"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="icon-box">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
                     </path>
-                  </svg></div>
+                  </svg>
+                </div>
                 <span class="summary-value">{{ detalhesLeilao.qtd_animais || 0 }}</span>
                 <span class="summary-label">animais</span>
               </div>
               <div class="summary-item">
-                <div class="icon-box"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="icon-box">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
                     </path>
-                  </svg></div>
+                  </svg>
+                </div>
                 <span class="summary-value">{{ detalhesLeilao.qtd_proprietarios || 0 }}</span>
                 <span class="summary-label">proprietário{{ detalhesLeilao.qtd_proprietarios > 1 ? 's' : '' }}</span>
               </div>
             </div>
 
-            <!-- Métricas -->
             <div class="metrics-row">
               <div class="metric-card">
-                <div class="metric-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="metric-icon">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                  </svg></div>
+                  </svg>
+                </div>
                 <span class="metric-label">PESO TOTAL</span>
                 <span class="metric-value">{{ (detalhesLeilao.peso_total || 0).toFixed(1).replace('.', ',') }}
                   <small>kg</small></span>
               </div>
               <div class="metric-card">
-                <div class="metric-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="metric-icon">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3">
                     </path>
-                  </svg></div>
+                  </svg>
+                </div>
                 <span class="metric-label">PESO MÉDIO</span>
                 <span class="metric-value">{{ (detalhesLeilao.peso_medio || 0).toFixed(1).replace('.', ',') }}
                   <small>kg</small></span>
               </div>
             </div>
 
-            <!-- Categorias -->
             <div class="section-block">
               <h4 class="section-subtitle">CATEGORIAS</h4>
               <div class="categories-list">
@@ -230,7 +227,6 @@
               </div>
             </div>
 
-            <!-- Distribuição por Proprietário -->
             <div class="section-block">
               <h4 class="section-subtitle">DISTRIBUIÇÃO POR PROPRIETÁRIO</h4>
               <div class="owners-list">
@@ -257,7 +253,6 @@
       </div>
     </div>
 
-    <!-- TELA DE FORMULÁRIO -->
     <div v-else-if="telaAtual === 'formulario'">
       <div class="page-header header-form">
         <button class="btn-voltar" @click="voltarParaLista" title="Voltar">
@@ -298,7 +293,7 @@
                 <span class="checkbox-text">{{ animal.nome }} ({{ animal.raca }})</span>
               </label>
               <div v-if="animaisDisponiveis.length === 0" class="sem-animais-aviso">
-                Nenhum animal livre no momento.
+                Nenhum animal vivo e livre no momento.
               </div>
             </div>
           </div>
@@ -320,21 +315,17 @@ const telaAtual = ref('lista');
 const mensagemFeedback = ref('');
 const editandoId = ref(null);
 
-// Dados
 const listaLeiloes = ref([]);
 const listaAnimais = ref([]);
 const listaProprietarios = ref([]);
 
-// Filtros
 const termoBusca = ref('');
 const filtroStatus = ref('todos');
 const filtroProprietario = ref('');
 
-// Modal de Detalhes
 const mostrarModalDetalhes = ref(false);
 const detalhesLeilao = ref({});
 
-// Formulário
 const form = reactive({
   nome_evento: '',
   dt_leilao: '',
@@ -343,7 +334,6 @@ const form = reactive({
   animais_ids: []
 });
 
-// Data atual formatada
 const dataAtual = new Date();
 const dataFormatada = ref(
   dataAtual.toLocaleDateString('pt-BR', {
@@ -354,7 +344,12 @@ const dataFormatada = ref(
   })
 );
 
-// Computed: animais disponíveis para vincular
+// Criação de computed para listar os proprietários em ordem alfabética no Select
+const proprietariosOrdenados = computed(() => {
+  return [...listaProprietarios.value].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+});
+
+// REQUISITO ATENDIDO: Filtra animais já ocupados E que estejam vivos (status === 'V')
 const animaisDisponiveis = computed(() => {
   const idsOcupados = new Set();
   listaLeiloes.value.forEach(leilao => {
@@ -362,12 +357,9 @@ const animaisDisponiveis = computed(() => {
       (leilao.animais || []).forEach(animal => idsOcupados.add(animal.id));
     }
   });
-  return listaAnimais.value.filter(animal => !idsOcupados.has(animal.id));
+  return listaAnimais.value.filter(animal => !idsOcupados.has(animal.id) && animal.status === 'V');
 });
 
-/* ==============================================================
-   LÓGICA DE ESTILOS E ETIQUETAS (CORRIGIDO)
-   ============================================================== */
 const leiloesComEstilo = computed(() => {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -375,7 +367,6 @@ const leiloesComEstilo = computed(() => {
   return listaLeiloes.value.map(leilao => {
     let dataLeilao = null;
     if (leilao.dt_leilao) {
-      // Converte string 'YYYY-MM-DD' para objeto Date de forma segura
       const partes = leilao.dt_leilao.split('-');
       if (partes.length === 3) {
         dataLeilao = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
@@ -401,9 +392,6 @@ const leiloesComEstilo = computed(() => {
   });
 });
 
-/* ==============================================================
-   LÓGICA DE FILTRAGEM (AQUI ESTAVA O ERRO ANTES)
-   ============================================================== */
 const leiloesFiltrados = computed(() => {
   return leiloesComEstilo.value.filter(leilao => {
     const termo = termoBusca.value.toLowerCase().trim();
@@ -421,9 +409,6 @@ const leiloesFiltrados = computed(() => {
   });
 });
 
-// ----------------------------------------------------------------------
-// Carregar dados da API
-// ----------------------------------------------------------------------
 const carregarDados = async () => {
   try {
     const resLeiloes = await fetch('http://127.0.0.1:8000/api/leiloes/');
@@ -442,9 +427,6 @@ const carregarDados = async () => {
 
 onMounted(carregarDados);
 
-// ----------------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------------
 const formatarDataExtenso = (dataString) => {
   if (!dataString) return '';
   const data = new Date(dataString + 'T00:00:00');
@@ -458,9 +440,6 @@ const mostrarMensagem = (texto) => {
   }, 3000);
 };
 
-// ----------------------------------------------------------------------
-// Ações da listagem
-// ----------------------------------------------------------------------
 const abrirFormulario = () => {
   form.nome_evento = '';
   form.dt_leilao = '';
@@ -503,9 +482,6 @@ const excluirLeilao = async (id) => {
   }
 };
 
-/* ==============================================================
-   AÇÃO DO OLHINHO
-   ============================================================== */
 const abrirModalDetalhes = async (id_leilao) => {
   mostrarModalDetalhes.value = true;
   detalhesLeilao.value = { carregando: true };
@@ -532,9 +508,6 @@ const fecharModalDetalhes = () => {
   detalhesLeilao.value = {};
 };
 
-// ----------------------------------------------------------------------
-// Salvar (criação/edição)
-// ----------------------------------------------------------------------
 const salvarLeilao = async () => {
   const url = editandoId.value
     ? `http://127.0.0.1:8000/api/leiloes/${editandoId.value}/`
@@ -564,7 +537,6 @@ const salvarLeilao = async () => {
 </script>
 
 <style scoped>
-/* ===== ESTILOS GERAIS ===== */
 .leiloes-page {
   padding: 20px 40px;
   background-color: #f9f2ec;
@@ -659,9 +631,6 @@ const salvarLeilao = async () => {
   background-color: #098011;
 }
 
-/* ===========================================================
-   BARRA DE FERRAMENTAS E FILTROS
-   =========================================================== */
 .tools-bar {
   display: flex;
   align-items: center;
@@ -674,24 +643,24 @@ const salvarLeilao = async () => {
   display: flex;
   align-items: center;
   background-color: #ffffff;
-  border: 1.5px solid #f0e6de;
-  border-radius: 8px;
-  padding: 8px 16px;
+  border: 1px solid #ff7322;
+  border-radius: 6px;
+  padding: 10px 15px;
   flex: 1;
   max-width: 400px;
-  height: 44px;
-  transition: border-color 0.2s;
+  height: 42px;
+  transition: box-shadow 0.2s;
 }
 
 .search-wrapper:focus-within {
-  border-color: #ff7322;
+  box-shadow: 0 0 0 1px #ff7322;
 }
 
 .search-wrapper input {
   border: none;
   background: transparent;
-  outline: none;
   width: 100%;
+  outline: none;
   font-size: 14px;
   color: #334155;
 }
@@ -699,7 +668,7 @@ const salvarLeilao = async () => {
 .search-icon {
   width: 20px;
   height: 20px;
-  color: #94a3b8;
+  color: #ff7322;
   margin-right: 10px;
 }
 
@@ -712,7 +681,8 @@ const salvarLeilao = async () => {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   color: #64748b;
-  padding: 10px 20px;
+  padding: 0 20px;
+  height: 42px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
@@ -731,54 +701,60 @@ const salvarLeilao = async () => {
   color: #ffffff;
 }
 
-.custom-select-container {
+/* NOVO ESTILO DO DROPDOWN (Design da Imagem) */
+.filtro-proprietario-custom {
   position: relative;
-  width: 200px;
-  height: 44px;
-}
-
-.custom-select-trigger {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  border: 1.5px solid #ff7322;
-  border-radius: 8px;
+  border: 1px solid #ff7322;
+  border-radius: 6px;
   background-color: #ffffff;
+  height: 42px;
+  min-width: 180px;
+  transition: box-shadow 0.2s;
+}
+
+.filtro-proprietario-custom:focus-within {
+  box-shadow: 0 0 0 1px #ff7322;
+}
+
+.icon-user {
+  width: 18px;
+  height: 18px;
   color: #ff7322;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  box-sizing: border-box;
+  position: absolute;
+  left: 12px;
   pointer-events: none;
 }
 
-.custom-select-trigger .icon-filter,
-.custom-select-trigger .icon-arrow-down {
-  width: 20px;
-  height: 20px;
-  stroke: #ff7322;
+.icon-seta {
+  width: 16px;
+  height: 16px;
+  color: #ff7322;
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
 }
 
-.hidden-select {
-  position: absolute;
-  top: 0;
-  left: 0;
+.filtro-proprietario-custom select {
   width: 100%;
   height: 100%;
-  opacity: 0;
+  padding: 0 35px 0 40px;
+  border: none;
+  background: transparent;
+  color: #ff7322;
+  font-weight: 500;
+  font-size: 14px;
+  appearance: none;
   cursor: pointer;
-  z-index: 2;
+  outline: none;
 }
 
-/* ===========================================================
-   TABELA
-   =========================================================== */
+.filtro-proprietario-custom select option {
+  color: #334155;
+  background: white;
+}
+
 .table-wrapper {
   background: #ffffff;
   border-radius: 10px;
@@ -841,7 +817,6 @@ const salvarLeilao = async () => {
   font-style: italic;
 }
 
-/* ===== BADGES DE STATUS ===== */
 .status-badge {
   padding: 4px 16px;
   border-radius: 20px;
@@ -862,7 +837,6 @@ const salvarLeilao = async () => {
   border: 1px solid #fde68a;
 }
 
-/* ===== AÇÕES DA TABELA ===== */
 .col-actions {
   display: flex;
   justify-content: center;
@@ -917,9 +891,6 @@ const salvarLeilao = async () => {
   font-style: italic;
 }
 
-/* ===========================================================
-   MODAL DE DETALHES (SEM VALORES FINANCEIROS)
-   =========================================================== */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1200,7 +1171,6 @@ const salvarLeilao = async () => {
   border-radius: 4px;
 }
 
-/* ===== FORMULÁRIO ===== */
 .header-form {
   display: flex;
   align-items: center;
@@ -1345,7 +1315,7 @@ const salvarLeilao = async () => {
     justify-content: space-between;
   }
 
-  .custom-select-container {
+  .filtro-proprietario-custom {
     width: 100%;
   }
 

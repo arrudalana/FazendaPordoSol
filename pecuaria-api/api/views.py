@@ -237,9 +237,17 @@ def detalhe_categoria(request, id_categoria):
 def gerenciar_leiloes(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id_leilao, nome_evento, dt_leilao, custo_fixo, local FROM leilao ORDER BY dt_leilao")
+            cursor.execute("""
+                SELECT id_leilao, nome_evento, dt_leilao, custo_fixo, local
+                FROM leilao
+                ORDER BY dt_leilao
+            """)
             leiloes = fetch_as_dict(cursor)
-            cursor.execute("SELECT id_animal as id, numero_brinco as nome, raca, id_leilao, peso, id_dono FROM animal WHERE id_leilao IS NOT NULL")
+            cursor.execute("""
+                SELECT id_animal as id, numero_brinco as nome, raca, id_leilao, peso, id_dono 
+                FROM animal 
+                WHERE id_leilao IS NOT NULL
+            """)
             animais_vinculados = fetch_as_dict(cursor)
             hoje = date.today()
 
@@ -253,11 +261,25 @@ def gerenciar_leiloes(request):
                         dt_leilao_obj = None
 
                 if dt_leilao_obj and dt_leilao_obj < hoje:
-                    l['color_class'] = 'badge-verde'
-                    l['status_text'] = 'Realizado'
+                    dias_atraso = (hoje - dt_leilao_obj).days
+                    if dias_atraso > 45:
+                        l['color_class'] = 'card-realizado-antigo'
+                        l['status_text'] = 'Realizado (+45 dias)'
+                    else:
+                        l['color_class'] = 'card-realizado'
+                        l['status_text'] = 'Realizado'
+                elif dt_leilao_obj and dt_leilao_obj > hoje:
+                    dias_futuro = (dt_leilao_obj - hoje).days
+                    if dias_futuro > 45:
+                        l['color_class'] = 'card-agendado-futuro'
+                        l['status_text'] = 'Possível Leilão'
+                        l['extra_label'] = 'Possível Leilão'
+                    else:
+                        l['color_class'] = 'card-agendado-proximo'
+                        l['status_text'] = 'Agendado'
                 else:
-                    l['color_class'] = 'badge-amarelo'
-                    l['status_text'] = 'Agendado'
+                    l['color_class'] = 'card-agendado-proximo'
+                    l['status_text'] = 'Hoje'
 
                 l['dt_leilao'] = dt_leilao_obj.strftime('%Y-%m-%d') if dt_leilao_obj else ''
                 l['animais'] = [a for a in animais_vinculados if a['id_leilao'] == l['id_leilao']]
@@ -274,7 +296,11 @@ def gerenciar_leiloes(request):
                 """, [dados.get('nome_evento'), dados.get('dt_leilao'), dados.get('custo_fixo', 0), dados.get('local', '')])
                 novo_leilao_id = cursor.fetchone()[0]
                 if 'animais_ids' in dados and len(dados['animais_ids']) > 0:
-                    cursor.execute("UPDATE animal SET id_leilao = %s WHERE id_animal = ANY(%s)", [novo_leilao_id, dados['animais_ids']])
+                    cursor.execute("""
+                        UPDATE animal
+                        SET id_leilao = %s
+                        WHERE id_animal = ANY(%s)
+                    """, [novo_leilao_id, dados['animais_ids']])
             return JsonResponse({'sucesso': True, 'id_leilao': novo_leilao_id}, status=201)
         except Exception as e:
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
@@ -293,13 +319,26 @@ def detalhe_leilao(request, id_leilao):
                         local = COALESCE(%s, local)
                     WHERE id_leilao = %s
                 """, [dados.get('nome_evento'), dados.get('dt_leilao'), dados.get('custo_fixo'), dados.get('local'), id_leilao])
+                
                 if 'animais_ids' in dados:
-                    cursor.execute("UPDATE animal SET id_leilao = NULL WHERE id_leilao = %s", [id_leilao])
-                    if len(dados['animais_ids']) > 0:
-                        cursor.execute("UPDATE animal SET id_leilao = %s WHERE id_animal = ANY(%s)", [id_leilao, dados['animais_ids']])
+                    novos_animais = set(dados['animais_ids']) 
+                    cursor.execute("""
+                        SELECT id_animal
+                        FROM animal
+                        WHERE id_leilao = %s
+                    """, [id_leilao])
+                    animais_atuais = set(row[0] for row in cursor.fetchall())
+                    animais_para_remover = list(animais_atuais - novos_animais) 
+                    animais_para_adicionar = list(novos_animais - animais_atuais) 
+                    
+                    if animais_para_remover:
+                        cursor.execute("UPDATE animal SET id_leilao = NULL WHERE id_animal = ANY(%s)", [animais_para_remover])
+                    if animais_para_adicionar:
+                        cursor.execute("UPDATE animal SET id_leilao = %s WHERE id_animal = ANY(%s)", [id_leilao, animais_para_adicionar])
             return JsonResponse({'sucesso': True})
         except Exception as e:
             return JsonResponse({'erro': str(e)}, status=400)
+       
     elif request.method == 'DELETE':
         with connection.cursor() as cursor:
             cursor.execute("UPDATE animal SET id_leilao = NULL WHERE id_leilao = %s", [id_leilao])
@@ -311,7 +350,6 @@ def info_detalhada_leilao(request, id_leilao):
     if request.method == 'GET':
         try:
             with connection.cursor() as cursor:
-                # 1. Dados Básicos do Leilão
                 cursor.execute("SELECT nome_evento, dt_leilao, local, custo_fixo FROM leilao WHERE id_leilao = %s", [id_leilao])
                 leilao_info = cursor.fetchone()
                 if not leilao_info:
@@ -321,7 +359,6 @@ def info_detalhada_leilao(request, id_leilao):
                 hoje = date.today()
                 status_text = 'Realizado' if data_leilao and data_leilao < hoje else 'Agendado'
 
-                # 2. Métricas dos Animais
                 cursor.execute("""
                     SELECT COUNT(id_animal), SUM(peso), AVG(peso), COUNT(DISTINCT id_dono)
                     FROM animal
@@ -333,7 +370,6 @@ def info_detalhada_leilao(request, id_leilao):
                 peso_medio = float(metricas[2]) if metricas[2] else 0.0
                 qtd_proprietarios = metricas[3] or 0
 
-                # 3. Categorias dos Animais
                 cursor.execute("""
                     SELECT c.descricao, COUNT(*) as total
                     FROM animal a
@@ -343,7 +379,6 @@ def info_detalhada_leilao(request, id_leilao):
                 """, [id_leilao])
                 categorias = fetch_as_dict(cursor)
 
-                # 4. Distribuição por Proprietário
                 cursor.execute("""
                     SELECT d.nome, d.id_dono, COUNT(*) as total_animais
                     FROM animal a
@@ -386,7 +421,8 @@ def gerenciar_vendas(request):
                 SELECT v.id_venda, a.numero_brinco as animal_nome, v.dt_venda,
                        v.vendedor, v.comprador, v.vlr_venda as valor, v.tp_pgto as tipo_pagamento,
                        COALESCE(l.nome_evento, 'Venda Direta') as leilao_nome,
-                       v.id_animal, v.id_leilao, v.justificativa_alteracao
+                       v.id_animal, v.id_leilao, v.justificativa_alteracao,
+                       a.id_dono 
                 FROM venda v
                 INNER JOIN animal a ON v.id_animal = a.id_animal
                 LEFT JOIN leilao l ON v.id_leilao = l.id_leilao
@@ -457,8 +493,13 @@ def importar_vendas_leilao(request):
             id_leilao = dados.get('id_leilao')
             
             with connection.cursor() as cursor:
-                cursor.execute("SELECT dt_leilao FROM leilao WHERE id_leilao = %s", [id_leilao])
+                cursor.execute("""
+                    SELECT dt_leilao 
+                    FROM leilao 
+                    WHERE id_leilao = %s
+                """, [id_leilao])
                 row_leilao = cursor.fetchone()
+                
                 if not row_leilao:
                     return JsonResponse({'sucesso': False, 'erro': 'Leilão não encontrado no sistema.'}, status=400)
                 
@@ -466,13 +507,17 @@ def importar_vendas_leilao(request):
                 if isinstance(dt_leilao, str):
                     dt_leilao = datetime.strptime(dt_leilao, '%Y-%m-%d').date()
                     
-                if dt_leilao >= date.today():
+                if dt_leilao > date.today():
                     return JsonResponse({
                         'sucesso': False, 
-                        'erro': 'Apenas leilões já realizados (data no passado) podem ser faturados em lote.'
+                        'erro': 'Apenas leilões já realizados (data no passado ou hoje) podem ser faturados em lote.'
                     }, status=400)
 
-                cursor.execute("SELECT COUNT(*) FROM venda WHERE id_leilao = %s", [id_leilao])
+                cursor.execute("""
+                    SELECT COUNT(*) 
+                    FROM venda 
+                    WHERE id_leilao = %s
+                """, [id_leilao])
                 if cursor.fetchone()[0] > 0:
                     return JsonResponse({
                         'sucesso': False, 
@@ -487,6 +532,87 @@ def importar_vendas_leilao(request):
                     dados['vendedor'], dados['comprador'], dados['valor_padrao'],
                     dados['data_venda'], dados['tipo_pagamento'], id_leilao
                 ])
+                
+                if cursor.rowcount == 0:
+                    return JsonResponse({
+                        'sucesso': False, 
+                        'erro': 'Nenhum animal vinculado a este leilão foi encontrado para realizar o faturamento.'
+                    }, status=400)
+
+            return JsonResponse({'sucesso': True})
+        except Exception as e:
+            return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
+
+
+# ------------------------- MEDICAMENTOS E APLICAÇÕES -------------------------
+@csrf_exempt
+def gerenciar_medicamentos(request):
+    if request.method == 'GET':
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id_medicamento, nome, tp_medicamento FROM medicamento ORDER BY nome")
+            medicamentos = fetch_as_dict(cursor)
+        return JsonResponse(medicamentos, safe=False)
+    
+    elif request.method == 'POST':
+        try:
+            dados = json.loads(request.body)
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO medicamento (nome, tp_medicamento)
+                    VALUES (%s, %s) RETURNING id_medicamento
+                """, [dados.get('nome'), dados.get('tp_medicamento')])
+                novo_id = cursor.fetchone()[0]
+            return JsonResponse({'sucesso': True, 'id_medicamento': novo_id}, status=201)
+        except Exception as e:
+            return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
+
+@csrf_exempt
+def gerenciar_aplicacoes(request):
+    if request.method == 'GET':
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ap.id_animal, ap.id_medicamento, ap.dt_aplicacao, ap.lote, ap.informado_indea,
+                       an.numero_brinco as animal_nome, an.id_dono, m.nome as medicamento_nome, m.tp_medicamento
+                FROM aplicacao ap
+                INNER JOIN animal an ON ap.id_animal = an.id_animal
+                INNER JOIN medicamento m ON ap.id_medicamento = m.id_medicamento
+                ORDER BY ap.dt_aplicacao DESC
+            """)
+            aplicacoes = fetch_as_dict(cursor)
+            for ap in aplicacoes:
+                ap['dt_aplicacao'] = ap['dt_aplicacao'].strftime('%Y-%m-%d') if ap['dt_aplicacao'] else ''
+        return JsonResponse(aplicacoes, safe=False)
+    
+    elif request.method == 'POST':
+        try:
+            dados = json.loads(request.body)
+            with connection.cursor() as cursor:
+                # Verificação de Chave Primária Composta para evitar quebras
+                cursor.execute("""
+                    SELECT COUNT(*) FROM aplicacao 
+                    WHERE id_animal = %s AND id_medicamento = %s
+                """, [dados['id_animal'], dados['id_medicamento']])
+                
+                if cursor.fetchone()[0] > 0:
+                    return JsonResponse({'sucesso': False, 'erro': 'Este animal já possui registro para este medicamento específico. A base de dados só permite uma aplicação por tipo.'}, status=400)
+
+                cursor.execute("""
+                    INSERT INTO aplicacao (id_animal, id_medicamento, dt_aplicacao, lote, informado_indea)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, [
+                    dados['id_animal'], dados['id_medicamento'], dados['dt_aplicacao'],
+                    dados.get('lote', ''), dados.get('informado_indea', 'N')
+                ])
+            return JsonResponse({'sucesso': True}, status=201)
+        except Exception as e:
+            return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
+
+@csrf_exempt
+def detalhe_aplicacao(request, id_animal, id_medicamento):
+    if request.method == 'DELETE':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM aplicacao WHERE id_animal = %s AND id_medicamento = %s", [id_animal, id_medicamento])
             return JsonResponse({'sucesso': True})
         except Exception as e:
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
