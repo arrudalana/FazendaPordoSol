@@ -36,6 +36,7 @@
 
     <nav class="sidebar-nav" role="navigation" aria-label="Navegação principal">
       <ul class="nav-list">
+        <!-- Itens do menu -->
         <li 
           v-for="item in menuItems" 
           :key="item.id"
@@ -79,10 +80,10 @@ const props = defineProps({
   usuarioLogin: { type: String, default: 'usuario@email.com' }
 });
 
-const emit = defineEmits(['mudar-tela']);
+const emit = defineEmits(['mudar-tela']); // Define o evento 'mudar-tela' que será emitido para o componente pai quando o usuário clicar em um item do menu
 
-const menuAtivo = ref('animais');
-const isExpanded = ref(true);
+const menuAtivo = ref('animais'); // Estado reativo para controlar qual item do menu está ativo
+const isExpanded = ref(true);   // Estado reativo para controlar se o menu lateral está expandido ou recolhido
 
 const menuItems = ref([
   { id: 'dashboard', label: 'Dashboard' },

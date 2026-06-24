@@ -9,7 +9,7 @@
     <div class="login-card">
       <h2>ENTRAR NO SISTEMA</h2>
       
-      <form @submit.prevent="realizarLogin">
+      <form @submit.prevent="realizarLogin"> <!-- Previne o envio padrão do formulário e chama a função realizarLogin -->
         <div class="input-group">
           <label for="usuario">Usuário</label>
           <div class="input-field">
@@ -44,7 +44,7 @@
           {{ mensagemErro }}
         </div>
 
-        <button type="submit" class="btn-entrar" :disabled="carregando"> 
+        <button type="submit" class="btn-entrar" :disabled="carregando"> <!-- Botão de login, desabilitado durante o carregamento -->
           {{ carregando ? 'Entrando...' : 'Entrar' }}
         </button>
       </form>
@@ -86,7 +86,7 @@ const realizarLogin = async () => {
 
     if (dados.sucesso) {
       // Repassa o nome e também o perfil para o componente pai (App.vue)
-      emit('login-sucesso', dados.nome_usuario, dados.perfil); 
+      emit('login-sucesso', dados.nome_usuario, dados.perfil);                                 
     } else {
       // Exibe "Usuário não encontrado" ou "Senha incorreta" vindo do Django
       mensagemErro.value = dados.mensagem; 

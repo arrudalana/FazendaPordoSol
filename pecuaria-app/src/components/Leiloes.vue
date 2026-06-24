@@ -26,14 +26,6 @@
       </div>
 
       <div class="tools-bar">
-        <div class="search-wrapper">
-          <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          <input type="text" v-model="termoBusca" placeholder="Buscar por local..." />
-        </div>
-
         <div class="status-filters">
           <button :class="['btn-filter-status', { active: filtroStatus === 'todos' }]"
             @click="filtroStatus = 'todos'">Todos</button>
@@ -65,7 +57,7 @@
           <thead>
             <tr>
               <th style="width: 25%;">Data</th>
-              <th style="width: 35%;">Local</th>
+              <th style="width: 35%;">Nome do Leilão</th>
               <th style="width: 20%;">Status</th>
               <th style="width: 20%; text-align: center;">Ações</th>
             </tr>
@@ -85,15 +77,7 @@
                 </span>
               </td>
               <td class="col-local">
-                <span class="icon-text-group">
-                  <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  </svg>
-                  {{ leilao.local || 'Local não informado' }}
-                </span>
+                <span class="destaque-texto">{{ leilao.nome_evento }}</span>
               </td>
               <td class="col-status">
                 <span class="status-badge" :class="leilao.badgeClass">{{ leilao.badgeText }}</span>
@@ -190,24 +174,20 @@
 
             <div class="metrics-row">
               <div class="metric-card">
-                <div class="metric-icon">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="metric-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                  </svg>
-                </div>
+                  </svg></div>
                 <span class="metric-label">PESO TOTAL</span>
                 <span class="metric-value">{{ (detalhesLeilao.peso_total || 0).toFixed(1).replace('.', ',') }}
                   <small>kg</small></span>
               </div>
               <div class="metric-card">
-                <div class="metric-icon">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="metric-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3">
                     </path>
-                  </svg>
-                </div>
+                  </svg></div>
                 <span class="metric-label">PESO MÉDIO</span>
                 <span class="metric-value">{{ (detalhesLeilao.peso_medio || 0).toFixed(1).replace('.', ',') }}
                   <small>kg</small></span>
@@ -248,7 +228,6 @@
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -315,41 +294,29 @@ const telaAtual = ref('lista');
 const mensagemFeedback = ref('');
 const editandoId = ref(null);
 
+const filtroStatus = ref('todos');
+const filtroProprietario = ref('');
+
 const listaLeiloes = ref([]);
 const listaAnimais = ref([]);
 const listaProprietarios = ref([]);
 
-const termoBusca = ref('');
-const filtroStatus = ref('todos');
-const filtroProprietario = ref('');
-
-const mostrarModalDetalhes = ref(false);
-const detalhesLeilao = ref({});
-
-const form = reactive({
-  nome_evento: '',
-  dt_leilao: '',
-  local: '',
-  custo_fixo: 0,
-  animais_ids: []
-});
-
-const dataAtual = new Date();
-const dataFormatada = ref(
-  dataAtual.toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-);
-
-// Criação de computed para listar os proprietários em ordem alfabética no Select
 const proprietariosOrdenados = computed(() => {
   return [...listaProprietarios.value].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 });
 
-// REQUISITO ATENDIDO: Filtra animais já ocupados E que estejam vivos (status === 'V')
+const form = reactive({
+  nome_evento: '', dt_leilao: '', local: '', custo_fixo: 0, animais_ids: []
+});
+
+const mostrarModalDetalhes = ref(false);
+const detalhesLeilao = ref({});
+
+const dataAtual = new Date();
+const dataFormatada = ref(
+  dataAtual.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+);
+
 const animaisDisponiveis = computed(() => {
   const idsOcupados = new Set();
   listaLeiloes.value.forEach(leilao => {
@@ -384,43 +351,33 @@ const leiloesComEstilo = computed(() => {
       badgeText = 'Realizado';
     }
 
-    return {
-      ...leilao,
-      badgeClass,
-      badgeText
-    };
+    return { ...leilao, badgeClass, badgeText };
   });
 });
 
 const leiloesFiltrados = computed(() => {
   return leiloesComEstilo.value.filter(leilao => {
-    const termo = termoBusca.value.toLowerCase().trim();
-    const bateLocal = !termo || (leilao.local && leilao.local.toLowerCase().includes(termo));
     const bateStatus = filtroStatus.value === 'todos' || leilao.badgeText === filtroStatus.value;
-
     let bateProprietario = true;
     if (filtroProprietario.value) {
       const idProp = parseInt(filtroProprietario.value);
-      const temAnimalDoProp = leilao.animais.some(a => a.id_dono === idProp);
-      bateProprietario = temAnimalDoProp;
+      bateProprietario = leilao.animais.some(a => a.id_dono === idProp);
     }
-
-    return bateLocal && bateStatus && bateProprietario;
+    return bateStatus && bateProprietario;
   });
 });
 
 const carregarDados = async () => {
   try {
-    const resLeiloes = await fetch('http://127.0.0.1:8000/api/leiloes/');
-    listaLeiloes.value = await resLeiloes.json();
-
-    const resAnimais = await fetch('http://127.0.0.1:8000/api/animais/');
-    listaAnimais.value = await resAnimais.json();
-
-    const resProprietarios = await fetch('http://127.0.0.1:8000/api/proprietarios/');
-    listaProprietarios.value = await resProprietarios.json();
+    const [resLeiloes, resAnimais, resProp] = await Promise.all([
+      fetch('http://127.0.0.1:8000/api/leiloes/'),
+      fetch('http://127.0.0.1:8000/api/animais/'),
+      fetch('http://127.0.0.1:8000/api/proprietarios/')
+    ]);
+    if (resLeiloes.ok) listaLeiloes.value = await resLeiloes.json();
+    if (resAnimais.ok) listaAnimais.value = await resAnimais.json();
+    if (resProp.ok) listaProprietarios.value = await resProp.json();
   } catch (error) {
-    console.error('Erro ao carregar dados:', error);
     mostrarMensagem('Erro ao conectar com o servidor.');
   }
 };
@@ -433,106 +390,57 @@ const formatarDataExtenso = (dataString) => {
   return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
+const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+
 const mostrarMensagem = (texto) => {
   mensagemFeedback.value = texto;
-  setTimeout(() => {
-    mensagemFeedback.value = '';
-  }, 3000);
+  setTimeout(() => { mensagemFeedback.value = ''; }, 3000);
 };
 
 const abrirFormulario = () => {
-  form.nome_evento = '';
-  form.dt_leilao = '';
-  form.local = '';
-  form.custo_fixo = 0;
-  form.animais_ids = [];
-  editandoId.value = null;
-  telaAtual.value = 'formulario';
+  form.nome_evento = ''; form.dt_leilao = ''; form.local = ''; form.custo_fixo = 0; form.animais_ids = [];
+  editandoId.value = null; telaAtual.value = 'formulario';
 };
 
 const editarLeilao = (leilao) => {
-  form.nome_evento = leilao.nome_evento;
-  form.dt_leilao = leilao.dt_leilao;
-  form.local = leilao.local || '';
-  form.custo_fixo = leilao.custo_fixo;
-  form.animais_ids = (leilao.animais || []).map(a => a.id);
-  editandoId.value = leilao.id_leilao;
-  telaAtual.value = 'formulario';
+  form.nome_evento = leilao.nome_evento; form.dt_leilao = leilao.dt_leilao; form.local = leilao.local || ''; form.custo_fixo = leilao.custo_fixo;
+  form.animais_ids = (leilao.animais || []).map(a => a.id); editandoId.value = leilao.id_leilao; telaAtual.value = 'formulario';
 };
 
-const voltarParaLista = () => {
-  telaAtual.value = 'lista';
-};
+const voltarParaLista = () => { telaAtual.value = 'lista'; };
 
 const excluirLeilao = async (id) => {
   if (!confirm('Tem certeza que deseja excluir este leilão?')) return;
   try {
-    const resposta = await fetch(`http://127.0.0.1:8000/api/leiloes/${id}/`, {
-      method: 'DELETE'
-    });
-    if (resposta.ok) {
-      mostrarMensagem('Leilão removido com sucesso!');
-      await carregarDados();
-    } else {
-      mostrarMensagem('Erro ao excluir o leilão.');
-    }
-  } catch (error) {
-    console.error(error);
-    mostrarMensagem('Erro de conexão.');
-  }
+    const resposta = await fetch(`http://127.0.0.1:8000/api/leiloes/${id}/`, { method: 'DELETE' });
+    if (resposta.ok) { mostrarMensagem('Leilão removido com sucesso!'); await carregarDados(); }
+  } catch (error) { mostrarMensagem('Erro de conexão.'); }
 };
 
 const abrirModalDetalhes = async (id_leilao) => {
   mostrarModalDetalhes.value = true;
   detalhesLeilao.value = { carregando: true };
-
   try {
     const resposta = await fetch(`http://127.0.0.1:8000/api/leiloes/${id_leilao}/detalhes/`);
-    if (resposta.ok) {
-      detalhesLeilao.value = await resposta.json();
-    } else {
-      detalhesLeilao.value = {
-        erro: `Erro ${resposta.status}: Não foi possível carregar as informações.`
-      };
-    }
-  } catch (error) {
-    console.error(error);
-    detalhesLeilao.value = {
-      erro: 'Erro de conexão com o servidor. Verifique sua rede.'
-    };
-  }
+    if (resposta.ok) { detalhesLeilao.value = await resposta.json(); }
+    else { detalhesLeilao.value = { erro: `Erro ao carregar informações.` }; }
+  } catch (error) { detalhesLeilao.value = { erro: 'Erro de conexão.' }; }
 };
 
-const fecharModalDetalhes = () => {
-  mostrarModalDetalhes.value = false;
-  detalhesLeilao.value = {};
-};
+const fecharModalDetalhes = () => { mostrarModalDetalhes.value = false; detalhesLeilao.value = {}; };
 
 const salvarLeilao = async () => {
-  const url = editandoId.value
-    ? `http://127.0.0.1:8000/api/leiloes/${editandoId.value}/`
-    : 'http://127.0.0.1:8000/api/leiloes/';
+  const url = editandoId.value ? `http://127.0.0.1:8000/api/leiloes/${editandoId.value}/` : 'http://127.0.0.1:8000/api/leiloes/';
   const metodo = editandoId.value ? 'PUT' : 'POST';
-
   try {
-    const resposta = await fetch(url, {
-      method: metodo,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    });
-
+    const resposta = await fetch(url, { method: metodo, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     if (resposta.ok) {
       mostrarMensagem(editandoId.value ? 'Leilão atualizado com sucesso!' : 'Leilão cadastrado com sucesso!');
-      await carregarDados();
-      voltarParaLista();
+      await carregarDados(); voltarParaLista();
     } else {
-      const erro = await resposta.json();
-      mostrarMensagem(erro.erro || 'Erro ao salvar leilão.');
+      const erro = await resposta.json(); mostrarMensagem(erro.erro || 'Erro ao salvar leilão.');
     }
-  } catch (error) {
-    console.error(error);
-    mostrarMensagem('Erro de conexão com o servidor.');
-  }
+  } catch (error) { mostrarMensagem('Erro de conexão.'); }
 };
 </script>
 
@@ -634,42 +542,10 @@ const salvarLeilao = async () => {
 .tools-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 15px;
   margin-bottom: 25px;
   flex-wrap: wrap;
-}
-
-.search-wrapper {
-  display: flex;
-  align-items: center;
-  background-color: #ffffff;
-  border: 1px solid #ff7322;
-  border-radius: 6px;
-  padding: 10px 15px;
-  flex: 1;
-  max-width: 400px;
-  height: 42px;
-  transition: box-shadow 0.2s;
-}
-
-.search-wrapper:focus-within {
-  box-shadow: 0 0 0 1px #ff7322;
-}
-
-.search-wrapper input {
-  border: none;
-  background: transparent;
-  width: 100%;
-  outline: none;
-  font-size: 14px;
-  color: #334155;
-}
-
-.search-icon {
-  width: 20px;
-  height: 20px;
-  color: #ff7322;
-  margin-right: 10px;
 }
 
 .status-filters {
@@ -701,7 +577,6 @@ const salvarLeilao = async () => {
   color: #ffffff;
 }
 
-/* NOVO ESTILO DO DROPDOWN (Design da Imagem) */
 .filtro-proprietario-custom {
   position: relative;
   display: flex;
@@ -798,6 +673,14 @@ const salvarLeilao = async () => {
   vertical-align: middle;
 }
 
+.destaque-texto {
+  font-family: "Anton SC", sans-serif;
+  font-size: 16px;
+  color: #ea580c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .icon-sm {
   width: 16px;
   height: 16px;
@@ -809,12 +692,6 @@ const salvarLeilao = async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.text-muted {
-  font-size: 13px;
-  color: #94a3b8;
-  font-style: italic;
 }
 
 .status-badge {
@@ -1298,17 +1175,9 @@ const salvarLeilao = async () => {
 }
 
 @media (max-width: 768px) {
-  .leiloes-page {
-    padding: 15px;
-  }
-
   .tools-bar {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .search-wrapper {
-    max-width: 100%;
   }
 
   .status-filters {
@@ -1317,14 +1186,6 @@ const salvarLeilao = async () => {
 
   .filtro-proprietario-custom {
     width: 100%;
-  }
-
-  .summary-blocks {
-    flex-wrap: wrap;
-  }
-
-  .summary-item {
-    min-width: 45%;
   }
 
   .form-grid {

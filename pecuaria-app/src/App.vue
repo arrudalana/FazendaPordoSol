@@ -1,4 +1,4 @@
-<script setup>
+<script setup>// Importa o método ref do Vue para criar variáveis reativas
 import { ref } from 'vue';
 import Login from './components/Login.vue';
 import Sidebar from './components/Sidebar.vue';
@@ -7,76 +7,83 @@ import Proprietarios from './components/Proprietarios.vue';
 import Leiloes from './components/Leiloes.vue';
 import Vendas from './components/Vendas.vue';
 import Medicamentos from './components/Medicamentos.vue';
+import Dashboard from './components/Dashboard.vue';
 
 
 const usuarioLogado = ref(false);
 const nomeDono = ref('');
 const usuarioLogin = ref('');     // guarda o email/login
 const perfilLogado = ref('');     // guarda o perfil (Administrador ou Dono)
-const telaAtual = ref('vendas');
+const telaAtual = ref('dashboard');
 const menuAberto = ref(false);
 
-const acessarSistema = (nome, usuario, perfil) => {
-  usuarioLogado.value = true;
-  nomeDono.value = nome;
+const acessarSistema = (nome, usuario, perfil) => { // Função chamada quando o login é bem-sucedido, recebendo o nome do usuário, o login e o perfil como parâmetros  
+  usuarioLogado.value = true; // Define o estado de usuário logado como verdadeiro
+  nomeDono.value = nome; // Define o nome do usuário logado
   usuarioLogin.value = usuario;
   perfilLogado.value = perfil;
 };
 
-const mudarTela = (tela) => {
-  telaAtual.value = tela;
-  menuAberto.value = false;
+const mudarTela = (tela) => { // Função chamada quando o usuário clica em um item do menu lateral, recebendo a tela selecionada como parâmetro
+  telaAtual.value = tela; // Define a tela atual como a tela selecionada
+  menuAberto.value = false; // Fecha o menu lateral após a seleção da tela
 };
 </script>
 
 <template>
+  <!-- Tela de login -->
   <Login v-if="!usuarioLogado" @login-sucesso="acessarSistema" />
+  <!-- Exibe o componente de login se o usuário não estiver logado -->
 
-  <div class="layout-sistema" v-else>
-    <header class="header-mobile">
+  <div class="layout-sistema" v-else> <!-- Tela principal do sistema, exibida após o login bem-sucedido -->
+    <header class="header-mobile"> <!-- Cabeçalho móvel, exibido em telas menores -->
       <button class="btn-menu" @click="menuAberto = true">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="28" height="28">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
       </button>
       <h2 class="anton-sc-regular title-mobile">Fazenda Pôr do Sol</h2> <!-- Título do cabeçalho móvel -->
     </header>
 
     <div v-if="menuAberto" class="overlay-mobile" @click="menuAberto = false"></div>
 
-    <Sidebar
-      :nome-usuario="nomeDono"
-      :usuario-login="usuarioLogin"
-      @mudar-tela="mudarTela"
-      class="sidebar-componente"
-      :class="{ 'sidebar-aberta': menuAberto }"
-    />
+    <!-- Overlay móvel, exibido quando o menu lateral está aberto em telas menores. Fecha o menu ao ser clicado -->
+    <Sidebar :nome-usuario="nomeDono" :usuario-login="usuarioLogin" @mudar-tela="mudarTela" class="sidebar-componente"
+      :class="{ 'sidebar-aberta': menuAberto }" />
 
     <main class="conteudo-principal">
       <Animais v-if="telaAtual === 'animais'" />
       <Proprietarios v-else-if="telaAtual === 'proprietarios'" />
+      <!-- Exibe o componente Proprietarios se a tela atual for 'proprietarios' -->
       <Leiloes v-else-if="telaAtual === 'leiloes'" />
       <Vendas v-else-if="telaAtual === 'vendas'" :perfil-usuario="perfilLogado" />
+      <!-- Passa o perfil do usuário para o componente Vendas -->
       <Medicamentos v-else-if="telaAtual === 'medicamentos'" />
+      <Dashboard v-else-if="telaAtual === 'dashboard'" />
       <div v-else class="tela-placeholder">
-        <h2 class="anton-sc-regular">Módulo: {{ telaAtual.toUpperCase() }}</h2>
-        <p>(Telas não desenvolvidas)</p>
+        <h2>Tela não encontrada</h2>
+        <p>A tela selecionada não está disponível.</p>
       </div>
     </main>
   </div>
 </template>
 
 <style>
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   background-color: #f8fafc;
   font-family: 'Figtree', sans-serif;
 }
+
 .anton-sc-regular {
   font-family: "Anton SC", sans-serif;
   font-weight: 400;
   font-style: normal;
 }
+
 .layout-sistema {
   display: flex;
   height: 100vh;
@@ -84,19 +91,44 @@ html, body {
   overflow: hidden;
   position: relative;
 }
-.header-mobile { display: none; }
-.overlay-mobile { display: none; }
+
+.header-mobile {
+  display: none;
+}
+
+.overlay-mobile {
+  display: none;
+}
+
 .conteudo-principal {
   flex-grow: 1;
   overflow-y: auto;
   background-color: #f9f2ec;
 }
-.tela-placeholder { padding: 80px 40px; text-align: center; color: #ff7322; }
-.tela-placeholder h2 { font-size: 32px; margin-bottom: 10px; letter-spacing: 1px; }
-.tela-placeholder p { font-size: 16px; color: #64748b; font-weight: 500; }
+
+.tela-placeholder {
+  padding: 80px 40px;
+  text-align: center;
+  color: #ff7322;
+}
+
+.tela-placeholder h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.tela-placeholder p {
+  font-size: 16px;
+  color: #64748b;
+  font-weight: 500;
+}
 
 @media (max-width: 768px) {
-  .layout-sistema { flex-direction: column; }
+  .layout-sistema {
+    flex-direction: column;
+  }
+
   .header-mobile {
     display: flex;
     align-items: center;
@@ -105,6 +137,7 @@ html, body {
     border-bottom: 1px solid #ebdcd1;
     z-index: 10;
   }
+
   .btn-menu {
     background: none;
     border: none;
@@ -113,11 +146,13 @@ html, body {
     padding: 0;
     margin-right: 15px;
   }
+
   .title-mobile {
     margin: 0;
     color: #1e293b;
     font-size: 22px;
   }
+
   .sidebar-componente {
     position: fixed;
     top: 0;
@@ -126,9 +161,13 @@ html, body {
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
-    box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
   }
-  .sidebar-aberta { transform: translateX(0); }
+
+  .sidebar-aberta {
+    transform: translateX(0);
+  }
+
   .overlay-mobile {
     display: block;
     position: fixed;

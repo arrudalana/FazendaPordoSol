@@ -236,18 +236,6 @@
           </div>
 
           <div class="input-group">
-            <label>Vendedor (Proprietário Vinculado)</label>
-            <div class="select-wrapper">
-              <select v-model="formVenda.vendedor" required>
-                <option value="" disabled>Selecione o proprietário vendedor...</option>
-                <option v-for="dono in proprietariosOrdenados" :key="dono.id_dono" :value="dono.nome">
-                  {{ dono.nome }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="input-group">
             <label>Comprador / Destino</label>
             <input type="text" v-model="formVenda.comprador" required>
           </div>
@@ -732,7 +720,6 @@ const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'curren
 @media (max-width: 600px) {
   .btn-novo {
     width: auto;
-    /* tamanho natural, sem esticar */
     align-self: flex-start;
   }
 }
@@ -806,21 +793,10 @@ const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'curren
   height: 24px;
 }
 
-.icon-orange {
-  background-color: #ff7322;
-}
-
-.icon-green {
-  background-color: #0b9e15;
-}
-
-.icon-yellow {
-  background-color: #eab308;
-}
-
-.icon-blue {
-  background-color: #3b82f6;
-}
+.icon-orange { background-color: #ff7322; }
+.icon-green { background-color: #0b9e15; }
+.icon-yellow { background-color: #eab308; }
+.icon-blue { background-color: #3b82f6; }
 
 /* Content card */
 .content-card {
@@ -1310,7 +1286,6 @@ const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'curren
 }
 
 @media (max-width: 600px) {
-
   .owner-calc,
   .owner-total {
     text-align: left;
@@ -1361,7 +1336,6 @@ const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'curren
 }
 
 @media (max-width: 480px) {
-
   .btn-salvar,
   .btn-cancelar {
     width: auto;

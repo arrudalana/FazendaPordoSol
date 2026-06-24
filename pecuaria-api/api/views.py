@@ -11,14 +11,15 @@ def fetch_as_dict(cursor):
 
 # ------------------------- LOGIN -------------------------
 @csrf_exempt
+# Função para realizar o login do usuário
 def realizar_login(request):
-    if request.method == 'POST':
+    if request.method == 'POST': # Verifica se o método da requisição é POST
         try:
             dados = json.loads(request.body)
-            usuario_input = dados.get('email')
-            senha_input = dados.get('senha')
-
-            with connection.cursor() as cursor:
+            usuario_input = dados.get('email') # Obtém o valor do campo 'email' do corpo da requisição
+            senha_input = dados.get('senha') # Obtém o valor do campo 'senha' do corpo da requisição
+            
+            with connection.cursor() as cursor: # Abre uma conexão com o banco de dados e cria um cursor para executar consultas SQL
                 cursor.execute("""
                     SELECT nome, senha, perfil, usuario
                     FROM dono
@@ -26,13 +27,13 @@ def realizar_login(request):
                 """, [usuario_input])
                 row = cursor.fetchone()
 
-            if not row:
+            if not row: # Verifica se o usuário não foi encontrado no banco de dados
                 return JsonResponse({'sucesso': False, 'mensagem': 'Usuário não encontrado.'}, status=401)
 
-            if row[1] != senha_input:
+            if row[1] != senha_input: # Verifica se a senha fornecida não corresponde à senha armazenada no banco de dados
                 return JsonResponse({'sucesso': False, 'mensagem': 'Senha incorreta.'}, status=401)
 
-            return JsonResponse({
+            return JsonResponse({ # Retorna uma resposta JSON indicando sucesso no login, juntamente com informações do usuário
                 'sucesso': True,
                 'nome_usuario': row[0],
                 'perfil': row[2] or 'Dono',
@@ -42,6 +43,145 @@ def realizar_login(request):
         except Exception as e:
             return JsonResponse({'sucesso': False, 'mensagem': f'Erro: {str(e)}'}, status=500)
     return JsonResponse({'sucesso': False, 'mensagem': 'Método inválido.'}, status=405)
+
+# ------------------------- ANIMAIS -------------------------
+@csrf_exempt
+def gerenciar_animais(request):
+    if request.method == 'GET':
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT a.id_animal as id, a.numero_brinco as nome, a.raca, a.status, a.sexo,
+                       a.peso, a.dt_nasc, a.dt_morte, a.causa_morte,
+                       d.nome as dono_nome, c.descricao as categoria_desc,
+                       COALESCE(l.nome_evento, 'Não vinculado') as leilao_nome,
+                       a.id_dono, a.id_categoria, a.id_leilao,
+                       EXISTS(SELECT 1 FROM venda v WHERE v.id_animal = a.id_animal) as is_vendido,
+                       EXISTS(
+                           SELECT 1 FROM aplicacao ap 
+                           INNER JOIN medicamento m ON ap.id_medicamento = m.id_medicamento 
+                           WHERE ap.id_animal = a.id_animal AND m.tp_medicamento IN ('ANT', 'PAR')
+                       ) as is_doente
+                FROM animal a
+                LEFT JOIN dono d ON a.id_dono = d.id_dono
+                LEFT JOIN categoria c ON a.id_categoria = c.id_categoria
+                LEFT JOIN leilao l ON a.id_leilao = l.id_leilao
+                ORDER BY d.nome ASC
+            """)
+            animais = fetch_as_dict(cursor)
+            for a in animais:
+                a['peso'] = float(a['peso']) if a['peso'] else 0.0
+                a['dt_nasc'] = a['dt_nasc'].strftime('%Y-%m-%d') if a['dt_nasc'] else ''
+                a['dt_morte'] = a['dt_morte'].strftime('%Y-%m-%d') if a.get('dt_morte') else ''
+        return JsonResponse(animais, safe=False)
+
+    elif request.method == 'POST':
+        try:
+            dados = json.loads(request.body)
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO animal (numero_brinco, raca, status, sexo, peso, dt_nasc, id_dono, id_categoria, causa_morte, dt_morte)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CASE WHEN %s = 'M' THEN CURRENT_DATE ELSE NULL END)
+                    RETURNING id_animal
+                """, [
+                    dados.get('nome', ''), dados.get('raca', ''), dados['status'], dados['sexo'],
+                    dados['peso'], dados.get('dt_nasc', '2024-01-01'), dados['id_dono'], dados['id_categoria'],
+                    dados.get('causa_morte') if dados.get('status') == 'M' else None,
+                    dados['status']
+                ])
+                novo_id = cursor.fetchone()[0]
+            return JsonResponse({'id': novo_id, 'sucesso': True}, status=201)
+        except Exception as e:
+            return JsonResponse({'erro': str(e)}, status=400)
+
+@csrf_exempt
+def detalhe_animal(request, id_animal):
+    if request.method == 'PUT':
+        try:
+            dados = json.loads(request.body)
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE animal
+                    SET numero_brinco = COALESCE(%s, numero_brinco),
+                        raca = COALESCE(%s, raca),
+                        status = COALESCE(%s, status),
+                        sexo = COALESCE(%s, sexo),
+                        peso = COALESCE(%s, peso),
+                        id_dono = COALESCE(%s, id_dono),
+                        id_categoria = COALESCE(%s, id_categoria),
+                        causa_morte = %s,
+                        dt_morte = CASE WHEN %s = 'M' THEN COALESCE(dt_morte, CURRENT_DATE) ELSE NULL END
+                    WHERE id_animal = %s
+                """, [
+                    dados.get('nome'), dados.get('raca'), dados.get('status'), dados.get('sexo'),
+                    dados.get('peso'), dados.get('id_dono'), dados.get('id_categoria'),
+                    dados.get('causa_morte') if dados.get('status') == 'M' else None,
+                    dados.get('status'),
+                    id_animal
+                ])
+            return JsonResponse({'sucesso': True})
+        except Exception as e:
+            return JsonResponse({'erro': str(e)}, status=400)
+
+    elif request.method == 'DELETE':
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM animal WHERE id_animal = %s", [id_animal])
+        return JsonResponse({'sucesso': True})
+
+# ------------------------- CATEGORIAS -------------------------
+@csrf_exempt
+def gerenciar_categorias(request):
+    if request.method == 'GET':
+        with connection.cursor() as cursor:
+            cursor.execute("""SELECT id_categoria, descricao, nome_categoria 
+                           FROM categoria 
+                           ORDER BY id_categoria""")
+            categorias = fetch_as_dict(cursor)
+        return JsonResponse(categorias, safe=False)
+    elif request.method == 'POST':
+        try:
+            dados = json.loads(request.body)
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO categoria (descricao, nome_categoria)
+                    VALUES (%s, %s) RETURNING id_categoria
+                """, [dados['descricao'], dados['nome_categoria']])
+                novo_id = cursor.fetchone()[0]
+            return JsonResponse({'id': novo_id, 'sucesso': True}, status=201)
+        except Exception as e:
+            return JsonResponse({'erro': str(e)}, status=400)
+
+@csrf_exempt
+def detalhe_categoria(request, id_categoria):
+    if request.method == 'GET':
+        with connection.cursor() as cursor:
+            cursor.execute("""SELECT id_categoria, descricao, nome_categoria 
+                           FROM categoria 
+                           WHERE id_categoria = %s", [id_categoria]
+                           """)
+            row = cursor.fetchone()
+            if not row:
+                return JsonResponse({'erro': 'Categoria não encontrada'}, status=404)
+            return JsonResponse({'id': row[0], 'descricao': row[1], 'nome_categoria': row[2]})
+    elif request.method == 'PUT':
+        try:
+            dados = json.loads(request.body)
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE categoria
+                    SET descricao = COALESCE(%s, descricao),
+                        nome_categoria = COALESCE(%s, nome_categoria)
+                    WHERE id_categoria = %s
+                """, [dados.get('descricao'), dados.get('nome_categoria'), id_categoria])
+            return JsonResponse({'sucesso': True})
+        except Exception as e:
+            return JsonResponse({'erro': str(e)}, status=400)
+        
+    elif request.method == 'DELETE':
+        with connection.cursor() as cursor:
+            cursor.execute("""DELETE FROM categoria 
+                           WHERE id_categoria = %s", [id_categoria]
+                           """)
+        return JsonResponse({'sucesso': True})
 
 # ------------------------- PROPRIETÁRIOS -------------------------
 @csrf_exempt
@@ -109,129 +249,7 @@ def detalhe_proprietario(request, id_dono):
         with connection.cursor() as cursor:
             cursor.execute("DELETE FROM dono WHERE id_dono = %s", [id_dono])
         return JsonResponse({'sucesso': True})
-
-# ------------------------- ANIMAIS -------------------------
-@csrf_exempt
-def gerenciar_animais(request):
-    if request.method == 'GET':
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT a.id_animal as id, a.numero_brinco as nome, a.raca, a.status, a.sexo,
-                       a.peso, a.dt_nasc, a.causa_morte,
-                       d.nome as dono_nome, c.descricao as categoria_desc,
-                       COALESCE(l.nome_evento, 'Não vinculado') as leilao_nome,
-                       a.id_dono, a.id_categoria, a.id_leilao
-                FROM animal a
-                LEFT JOIN dono d ON a.id_dono = d.id_dono
-                LEFT JOIN categoria c ON a.id_categoria = c.id_categoria
-                LEFT JOIN leilao l ON a.id_leilao = l.id_leilao
-                ORDER BY d.nome ASC
-            """)
-            animais = fetch_as_dict(cursor)
-            for a in animais:
-                a['peso'] = float(a['peso']) if a['peso'] else 0.0
-                a['dt_nasc'] = a['dt_nasc'].strftime('%Y-%m-%d') if a['dt_nasc'] else ''
-        return JsonResponse(animais, safe=False)
-
-    elif request.method == 'POST':
-        try:
-            dados = json.loads(request.body)
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO animal (numero_brinco, raca, status, sexo, peso, dt_nasc, id_dono, id_categoria, causa_morte)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    RETURNING id_animal
-                """, [
-                    dados.get('nome', ''), dados.get('raca', ''), dados['status'], dados['sexo'],
-                    dados['peso'], dados.get('dt_nasc', '2024-01-01'), dados['id_dono'], dados['id_categoria'],
-                    dados.get('causa_morte') if dados.get('status') == 'M' else None
-                ])
-                novo_id = cursor.fetchone()[0]
-            return JsonResponse({'id': novo_id, 'sucesso': True}, status=201)
-        except Exception as e:
-            return JsonResponse({'erro': str(e)}, status=400)
-
-@csrf_exempt
-def detalhe_animal(request, id_animal):
-    if request.method == 'PUT':
-        try:
-            dados = json.loads(request.body)
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    UPDATE animal
-                    SET numero_brinco = COALESCE(%s, numero_brinco),
-                        raca = COALESCE(%s, raca),
-                        status = COALESCE(%s, status),
-                        sexo = COALESCE(%s, sexo),
-                        peso = COALESCE(%s, peso),
-                        id_dono = COALESCE(%s, id_dono),
-                        id_categoria = COALESCE(%s, id_categoria),
-                        causa_morte = %s
-                    WHERE id_animal = %s
-                """, [
-                    dados.get('nome'), dados.get('raca'), dados.get('status'), dados.get('sexo'),
-                    dados.get('peso'), dados.get('id_dono'), dados.get('id_categoria'),
-                    dados.get('causa_morte') if dados.get('status') == 'M' else None,
-                    id_animal
-                ])
-            return JsonResponse({'sucesso': True})
-        except Exception as e:
-            return JsonResponse({'erro': str(e)}, status=400)
-
-    elif request.method == 'DELETE':
-        with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM animal WHERE id_animal = %s", [id_animal])
-        return JsonResponse({'sucesso': True})
-
-# ------------------------- CATEGORIAS -------------------------
-@csrf_exempt
-def gerenciar_categorias(request):
-    if request.method == 'GET':
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id_categoria, descricao, nome_categoria FROM categoria ORDER BY id_categoria")
-            categorias = fetch_as_dict(cursor)
-        return JsonResponse(categorias, safe=False)
-    elif request.method == 'POST':
-        try:
-            dados = json.loads(request.body)
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO categoria (descricao, nome_categoria)
-                    VALUES (%s, %s) RETURNING id_categoria
-                """, [dados['descricao'], dados['nome_categoria']])
-                novo_id = cursor.fetchone()[0]
-            return JsonResponse({'id': novo_id, 'sucesso': True}, status=201)
-        except Exception as e:
-            return JsonResponse({'erro': str(e)}, status=400)
-
-@csrf_exempt
-def detalhe_categoria(request, id_categoria):
-    if request.method == 'GET':
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id_categoria, descricao, nome_categoria FROM categoria WHERE id_categoria = %s", [id_categoria])
-            row = cursor.fetchone()
-            if not row:
-                return JsonResponse({'erro': 'Categoria não encontrada'}, status=404)
-            return JsonResponse({'id': row[0], 'descricao': row[1], 'nome_categoria': row[2]})
-    elif request.method == 'PUT':
-        try:
-            dados = json.loads(request.body)
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    UPDATE categoria
-                    SET descricao = COALESCE(%s, descricao),
-                        nome_categoria = COALESCE(%s, nome_categoria)
-                    WHERE id_categoria = %s
-                """, [dados.get('descricao'), dados.get('nome_categoria'), id_categoria])
-            return JsonResponse({'sucesso': True})
-        except Exception as e:
-            return JsonResponse({'erro': str(e)}, status=400)
-        
-    elif request.method == 'DELETE':
-        with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM categoria WHERE id_categoria = %s", [id_categoria])
-        return JsonResponse({'sucesso': True})
-
+    
 # ------------------------- LEILÕES -------------------------
 @csrf_exempt
 def gerenciar_leiloes(request):
@@ -580,21 +598,26 @@ def gerenciar_aplicacoes(request):
             """)
             aplicacoes = fetch_as_dict(cursor)
             for ap in aplicacoes:
-                ap['dt_aplicacao'] = ap['dt_aplicacao'].strftime('%Y-%m-%d') if ap['dt_aplicacao'] else ''
+                dt = ap.get('dt_aplicacao') or ap.get('Dt_Aplicacao')
+                if isinstance(dt, date):
+                    ap['dt_aplicacao'] = dt.strftime('%Y-%m-%d')
+                elif dt:
+                    ap['dt_aplicacao'] = str(dt)
+                else:
+                    ap['dt_aplicacao'] = ''
         return JsonResponse(aplicacoes, safe=False)
     
     elif request.method == 'POST':
         try:
             dados = json.loads(request.body)
             with connection.cursor() as cursor:
-                # Verificação de Chave Primária Composta para evitar quebras
                 cursor.execute("""
                     SELECT COUNT(*) FROM aplicacao 
                     WHERE id_animal = %s AND id_medicamento = %s
                 """, [dados['id_animal'], dados['id_medicamento']])
                 
                 if cursor.fetchone()[0] > 0:
-                    return JsonResponse({'sucesso': False, 'erro': 'Este animal já possui registro para este medicamento específico. A base de dados só permite uma aplicação por tipo.'}, status=400)
+                    return JsonResponse({'sucesso': False, 'erro': 'Este animal já possui registro para este medicamento específico.'}, status=400)
 
                 cursor.execute("""
                     INSERT INTO aplicacao (id_animal, id_medicamento, dt_aplicacao, lote, informado_indea)
